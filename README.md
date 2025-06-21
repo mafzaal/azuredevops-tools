@@ -133,47 +133,27 @@ build_info = get_build_tool(67890)
 print(build_info)
 ```
 
-### MCP Server
-
-Start the MCP server to expose tools for LLM integration:
-
-```bash
-python mcp_server.py
-```
-
-The server provides a JSON-RPC interface over STDIO for MCP clients.
-
-### Tool Discovery
-
-```python
-from tools import get_available_tools, get_tools_by_category
-
-# Get all available tools
-all_tools = get_available_tools()
-print(f"Total tools: {all_tools['total_tools']}")
-
-# Get tools by category
-build_tools = get_tools_by_category("build")
-print(f"Build tools: {build_tools['tool_count']}")
-```
-
 ## 🤖 LLM Integration
 
 ### MCP Configuration
 
-The `mcp-config.json` file provides tool schema for MCP clients:
+The `mcp.json` file provides configuration with clients:
 
 ```json
 {
-  "mcpVersion": "2024-11-05",
-  "name": "azuredevops-tools",
-  "description": "Azure DevOps Tools for LLM/MCP Integration",
-  "tools": {
-    "get_changeset_tool": {
-      "description": "Get a specific changeset and summarize its details",
-      "inputSchema": { ... }
+    "servers": {
+        "azuredevops-tools": {
+            "type": "stdio",
+            "command": "uvx",
+            "args": [
+                "--directory",
+                "${workspaceFolder}",
+                "azuredevops-tools"
+                
+            ],
+            "envFile": "${workspaceFolder}/.env",
+        }
     }
-  }
 }
 ```
 
