@@ -375,7 +375,7 @@ uv run twine upload dist/*
 
 #### Testing Published Package
 ```bash
-# Test from Test PyPI
+# Test from Test PyPI (when published)
 pip install --index-url https://test.pypi.org/simple/ azuredevops-tools
 
 # Test from PyPI
@@ -400,18 +400,7 @@ def your_new_tool(param: int) -> str:
     pass
 ```
 
-2. Add to tool registry:
-```python
-TOOL_REGISTRY["your_new_tool"] = {
-    "category": "appropriate_category",
-    "description": "Clear tool description",
-    "parameters": ["param: int"],
-    "returns": "Return description",
-    "use_cases": ["use case 1", "use case 2"]
-}
-```
-
-3. Update MCP configuration and exports
+2. Update MCP configuration and exports
 
 ### Testing
 
