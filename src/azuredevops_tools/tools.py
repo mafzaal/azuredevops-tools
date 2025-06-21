@@ -6,13 +6,19 @@ It includes tools for changesets, builds, pipelines, and code analysis that can 
 discovered and used by Large Language Models through the Model Context Protocol (MCP).
 
 Each tool follows MCP naming conventions and includes comprehensive documentation for
-optimal LLM discoverability and usage.
+optimal LLM discoverability and usage. All tools support an optional 'project' parameter
+to allow targeting specific Azure DevOps projects, while defaulting to the configured project.
 
 Tool Categories:
 - Changeset Tools: Retrieve and analyze code changes
 - Build Tools: Monitor and analyze build results  
 - Pipeline Tools: Manage and inspect CI/CD pipelines
 - Diagnostic Tools: Debug failed builds and tasks
+
+Project Parameter:
+All tools accept an optional 'project' parameter (str) to specify the Azure DevOps project.
+If not provided, the tools will use the default project configured in the DevOpsToolset instance.
+This allows the same tool instance to work with multiple projects when needed.
 """
 
 
@@ -25,7 +31,7 @@ import logging
 devops = DevOpsToolset()
 
 
-def get_changeset_tool(changeset_id: int) -> str:
+def get_changeset_tool(changeset_id: int, project: Optional[str] = None) -> str:
     """
     Get a specific changeset and summarize its details.
     
@@ -34,6 +40,7 @@ def get_changeset_tool(changeset_id: int) -> str:
     
     Parameters:
         changeset_id (int): The ID of the changeset to retrieve.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
         
     Returns:
         str: A formatted summary of the changeset with ID, comment, author, and date.
@@ -44,7 +51,7 @@ def get_changeset_tool(changeset_id: int) -> str:
         "Changeset 12345 - Initial commit by John Doe on 2023-10-01T12:00:00.000Z"
     """
     try:
-        changeset = devops.get_changeset(changeset_id)
+        changeset = devops.get_changeset(changeset_id, project=project)
         
         if not changeset:
             return f"Changeset {changeset_id} not found or could not be retrieved."
@@ -61,8 +68,7 @@ def get_changeset_tool(changeset_id: int) -> str:
         logging.error(f"Error retrieving changeset {changeset_id}: {e}")
         return f"Error retrieving changeset {changeset_id}: {str(e)}"
 
-# create tool that LLM can use to get diff of a file in a changeset
-def get_file_diff_tool(file_path: str, changeset_id: int) -> str:
+def get_file_diff_tool(file_path: str, changeset_id: int, project: Optional[str] = None) -> str:
     """
     Get the file diff for a specific file in a changeset.
     
@@ -73,6 +79,7 @@ def get_file_diff_tool(file_path: str, changeset_id: int) -> str:
     Parameters:
         file_path (str): The full path of the file to get the diff for (e.g., "src/main.py").
         changeset_id (int): The ID of the changeset containing the file changes.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
         
     Returns:
         str: The formatted diff showing additions, deletions, and modifications, or an error message.
@@ -88,15 +95,14 @@ def get_file_diff_tool(file_path: str, changeset_id: int) -> str:
          +print('Hello, DevOps!')"
     """
     try:
-        diff = devops.get_file_diff(file_path, changeset_id)
+        diff = devops.get_file_diff(file_path, changeset_id, project=project)
         return f"File diff for {file_path} in changeset {changeset_id}:\n{diff}"
     except Exception as e:
         logging.error(f"Error getting file diff for {file_path} in changeset {changeset_id}: {e}")
         return f"Error getting file diff for {file_path} in changeset {changeset_id}: {str(e)}"
     
 
-# Create a tool to get changesets changes, which can be used by the LLM
-def get_changeset_changes_tool(changeset_id: int) -> str:
+def get_changeset_changes_tool(changeset_id: int, project: Optional[str] = None) -> str:
     """
     Get changes for a specific changeset and summarize them.
     
@@ -106,6 +112,7 @@ def get_changeset_changes_tool(changeset_id: int) -> str:
     
     Parameters:
         changeset_id (int): The ID of the changeset to retrieve changes for.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
         
     Returns:
         str: A formatted summary of all file changes in the changeset, excluding binary files.
@@ -117,7 +124,7 @@ def get_changeset_changes_tool(changeset_id: int) -> str:
          - src/main.py (Modified)
          - src/utils.py (Added)"
     """
-    changes = devops.get_changeset_changes(changeset_id)
+    changes = devops.get_changeset_changes(changeset_id, project=project)
     
     if not changes:
         return f"No changes found for changeset {changeset_id}."
@@ -134,7 +141,7 @@ def get_changeset_changes_tool(changeset_id: int) -> str:
     
     return  f"Changeset {changeset_id} has {len(changes_summary)} file(s) changed:\n" + "\n".join(changes_summary) if changes_summary else "No significant file changes found."
 
-def get_changeset_list_tool(author: Optional[str] = None, from_changeset_id: Optional[int] = None, to_changeset_id: Optional[int] = None) -> str:
+def get_changeset_list_tool(author: Optional[str] = None, from_changeset_id: Optional[int] = None, to_changeset_id: Optional[int] = None, project: Optional[str] = None) -> str:
     """
     Get a list of changesets optionally filtered by author and/or changeset ID range.
     
@@ -146,6 +153,7 @@ def get_changeset_list_tool(author: Optional[str] = None, from_changeset_id: Opt
         author (str, optional): The display name of the author to filter changesets by.
         from_changeset_id (int, optional): The starting changeset ID for the range filter.
         to_changeset_id (int, optional): The ending changeset ID for the range filter.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
     
     Returns:
         str: A formatted list of changesets with IDs, comments, authors, and creation dates.
@@ -158,7 +166,7 @@ def get_changeset_list_tool(author: Optional[str] = None, from_changeset_id: Opt
          Changeset 12346 - Fix bug #123 by John Doe on 2023-10-02T14:30:00.000Z"
     """
     try:
-        changesets = devops.get_changeset_list(author, from_changeset_id, to_changeset_id)
+        changesets = devops.get_changeset_list(author, from_changeset_id, to_changeset_id, project=project)
         
         if not changesets:
             return f"No changesets found matching the criteria."
@@ -178,7 +186,7 @@ def get_changeset_list_tool(author: Optional[str] = None, from_changeset_id: Opt
         logging.error(f"Error getting changeset list: {e}")
         return f"Error getting changeset list: {str(e)}"
 
-def get_build_tool(build_id: int) -> str:
+def get_build_tool(build_id: int, project: Optional[str] = None) -> str:
     """
     Get detailed information about a specific build.
     
@@ -188,6 +196,7 @@ def get_build_tool(build_id: int) -> str:
     
     Parameters:
         build_id (int): The unique ID of the build to retrieve information for.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
     
     Returns:
         str: A detailed summary of the build including status, result, timing, and metadata.
@@ -202,12 +211,12 @@ def get_build_tool(build_id: int) -> str:
          Duration: 00:15:32"
     """
     try:
-        return devops.f1e_get_build_tool(build_id)
+        return devops.f1e_get_build_tool(build_id, project=project)
     except Exception as e:
         logging.error(f"Error getting build {build_id}: {e}")
         return f"Error getting build {build_id}: {str(e)}"
 
-def get_builds_tool(definition_id: Optional[int] = None, top: int = 50, status_filter: Optional[str] = None) -> str:
+def get_builds_tool(definition_id: Optional[int] = None, top: int = 50, status_filter: Optional[str] = None, project: Optional[str] = None) -> str:
     """
     Get a list of builds from Azure DevOps with optional filtering.
     
@@ -219,6 +228,7 @@ def get_builds_tool(definition_id: Optional[int] = None, top: int = 50, status_f
         definition_id (int, optional): Filter builds by specific pipeline/definition ID.
         top (int): Maximum number of builds to retrieve (default: 50).
         status_filter (str, optional): Filter by status ('completed', 'inProgress', 'notStarted').
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
     
     Returns:
         str: A formatted list of builds with IDs, statuses, results, and timing information.
@@ -238,12 +248,12 @@ def get_builds_tool(definition_id: Optional[int] = None, top: int = 50, status_f
           Duration: 0:15:00"
     """
     try:
-        return devops.f1e_get_builds_tool(definition_id, top, status_filter)
+        return devops.f1e_get_builds_tool(definition_id, top, status_filter, project=project)
     except Exception as e:
         logging.error(f"Error getting builds: {e}")
         return f"Error getting builds: {str(e)}"
 
-def get_build_logs_tool(build_id: int) -> Dict[str, Any]:
+def get_build_logs_tool(build_id: int, project: Optional[str] = None) -> Dict[str, Any]:
     """
     Get logs summary for a specific build with preview content (first 50 lines).
     
@@ -253,6 +263,7 @@ def get_build_logs_tool(build_id: int) -> Dict[str, Any]:
     
     Parameters:
         build_id (int): The unique ID of the build to retrieve logs for.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
     
     Returns:
         Dict[str, Any]: A structured dictionary containing build logs with metadata and preview content.
@@ -281,7 +292,7 @@ def get_build_logs_tool(build_id: int) -> Dict[str, Any]:
         }
     """
     try:
-        return devops.f1e_get_build_logs_tool(build_id)
+        return devops.f1e_get_build_logs_tool(build_id, project=project)
     except Exception as e:
         logging.error(f"Error getting build logs for build {build_id}: {e}")
         return {
@@ -290,7 +301,7 @@ def get_build_logs_tool(build_id: int) -> Dict[str, Any]:
             'logs': []
         }
 
-def get_build_log_full_content_tool(build_id: int, log_id: int) -> str:
+def get_build_log_full_content_tool(build_id: int, log_id: int, project: Optional[str] = None) -> str:
     """
     Get the full content of a specific build log.
     
@@ -301,6 +312,7 @@ def get_build_log_full_content_tool(build_id: int, log_id: int) -> str:
     Parameters:
         build_id (int): The unique ID of the build containing the log.
         log_id (int): The unique ID of the specific log to retrieve full content for.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
     
     Returns:
         str: A markdown-formatted string containing complete log content and metadata.
@@ -324,7 +336,7 @@ def get_build_log_full_content_tool(build_id: int, log_id: int) -> str:
         ```
     """
     try:
-        log_data = devops.f1e_get_build_log_full_content_tool(build_id, log_id)
+        log_data = devops.f1e_get_build_log_full_content_tool(build_id, log_id, project=project)
         
         if 'error' in log_data:
             return f"# Build Log {build_id} - Log {log_id}\n\n**Error**: {log_data['error']}"
@@ -352,7 +364,7 @@ def get_build_log_full_content_tool(build_id: int, log_id: int) -> str:
         logging.error(f"Error getting full content for log {log_id} in build {build_id}: {e}")
         return f"# Build Log {build_id} - Log {log_id}\n\n**Error**: {str(e)}"
 
-def get_failed_tasks_with_logs_tool(build_id: int) -> str:
+def get_failed_tasks_with_logs_tool(build_id: int, project: Optional[str] = None) -> str:
     """
     Get failed tasks for a build and the last 200 lines of their logs.
     
@@ -362,6 +374,7 @@ def get_failed_tasks_with_logs_tool(build_id: int) -> str:
     
     Parameters:
         build_id (int): The unique ID of the build to analyze for failed tasks.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
         
     Returns:
         str: A markdown-formatted string containing failed task details and their recent log content.
@@ -386,7 +399,7 @@ def get_failed_tasks_with_logs_tool(build_id: int) -> str:
         ```
     """
     try:
-        failed_tasks = devops.get_failed_tasks_with_logs(build_id)
+        failed_tasks = devops.get_failed_tasks_with_logs(build_id, project=project)
         
         if not failed_tasks:
             return f"# Failed Tasks for Build {build_id}\n\nNo failed tasks found for this build."
@@ -413,13 +426,16 @@ def get_failed_tasks_with_logs_tool(build_id: int) -> str:
         logging.error(f"Error getting failed tasks/logs for build {build_id}: {e}")
         return f"# Failed Tasks for Build {build_id}\n\n**Error**: {str(e)}"
 
-def get_build_pipelines_tool() -> str:
+def get_build_pipelines_tool(project: Optional[str] = None) -> str:
     """
     Get a list of all build pipelines/definitions in the project.
     
     This tool retrieves comprehensive information about all available build pipelines
     in the Azure DevOps project, including their IDs, names, types, revision information,
     queue status, and repository details. Essential for pipeline management and discovery.
+    
+    Parameters:
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
     
     Returns:
         str: A formatted string with detailed information about all build pipelines.
@@ -442,7 +458,7 @@ def get_build_pipelines_tool() -> str:
         ------------------------------------------------------------"
     """
     try:
-        return devops.f1e_get_build_pipelines_tool()
+        return devops.f1e_get_build_pipelines_tool(project=project)
     except Exception as e:
         logging.error(f"Error getting build pipelines: {e}")
         return f"Error getting build pipelines: {str(e)}"

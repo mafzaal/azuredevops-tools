@@ -13,6 +13,8 @@ A comprehensive collection of Azure DevOps tools designed for seamless integrati
 
 ### Available Tools
 
+All tools support an optional `project` parameter to target specific Azure DevOps projects.
+
 | Tool Name | Category | Description | Use Cases |
 |-----------|----------|-------------|-----------|
 | `get_changeset_tool` | changeset | Get detailed changeset information | Code review, audit trail |
@@ -34,7 +36,7 @@ A comprehensive collection of Azure DevOps tools designed for seamless integrati
 # Clone and install in development mode
 git clone <repository-url>
 cd azuredevops-tools
-pip install -e .
+uv pip install -e .
 
 # Or install from PyPI (when published)
 pip install azuredevops-tools
@@ -45,7 +47,7 @@ pip install azuredevops-tools
 ```bash
 git clone <repository-url>
 cd azuredevops-tools
-pip install -r requirements.txt
+uv sync
 ```
 
 ## 🔧 Configuration
@@ -65,22 +67,58 @@ DEVOPS_PROJECT=your_project_name
 ```python
 from azuredevops_tools import get_changeset_tool, get_build_tool
 
-# Get changeset information
+# Get changeset information (using default project)
 changeset_info = get_changeset_tool(12345)
+print(changeset_info)
+
+# Get changeset from specific project
+changeset_info = get_changeset_tool(12345, project="SpecificProject")
 print(changeset_info)
 
 # Get build information  
 build_info = get_build_tool(67890)
 print(build_info)
+
+# Get build from specific project
+build_info = get_build_tool(67890, project="AnotherProject")
+print(build_info)
 ```
+
+### Multi-Project Support
+
+All tools support an optional `project` parameter to target specific Azure DevOps projects:
+
+```python
+# Using default project (from DEVOPS_PROJECT environment variable)
+changesets = get_changeset_list_tool(author="John Doe")
+builds = get_builds_tool(top=5)
+
+# Using specific project
+changesets = get_changeset_list_tool(author="John Doe", project="ProjectA")
+builds = get_builds_tool(top=5, project="ProjectB")
+
+# Comparing data across projects
+project_a_builds = get_builds_tool(definition_id=139, project="ProjectA")
+project_b_builds = get_builds_tool(definition_id=139, project="ProjectB")
+```
+
+**Benefits:**
+- Work with multiple Azure DevOps projects using the same tool instance
+- Compare data across different projects
+- Maintain separate project contexts for different workflows
+- Fallback to default project when project parameter is not specified
 
 ### Direct Tool Usage (Local Development)
 
 ```python
 from src.azuredevops_tools.tools import get_changeset_tool, get_build_tool
 
-# Get changeset information
+# Get changeset information (using default project)
 changeset_info = get_changeset_tool(12345)
+print(changeset_info)
+
+# Get changeset from specific project
+changeset_info = get_changeset_tool(12345, project="MyProject")
 print(changeset_info)
 
 # Get build information  
@@ -146,23 +184,35 @@ Each tool includes comprehensive metadata for LLM discovery:
 
 ### Changeset Analysis
 ```python
-# Get recent changesets by author
+# Get recent changesets by author (default project)
 changesets = get_changeset_list_tool(author="John Doe", from_changeset_id=12340)
+
+# Get recent changesets by author (specific project)  
+changesets = get_changeset_list_tool(author="John Doe", from_changeset_id=12340, project="MyProject")
 
 # Analyze specific changeset changes
 changes = get_changeset_changes_tool(12345)
 
 # Get file diff for code review
 diff = get_file_diff_tool("src/main.py", 12345)
+
+# Get file diff from specific project
+diff = get_file_diff_tool("src/main.py", 12345, project="SpecificProject")
 ```
 
 ### Build Monitoring
 ```python
-# Check recent builds
+# Check recent builds (default project)
 builds = get_builds_tool(top=10, status_filter="completed")
+
+# Check recent builds (specific project)
+builds = get_builds_tool(top=10, status_filter="completed", project="MyProject")
 
 # Get failed build details
 failed_tasks = get_failed_tasks_with_logs_tool(67890)
+
+# Get failed build details from specific project
+failed_tasks = get_failed_tasks_with_logs_tool(67890, project="AnotherProject")
 
 # Review build logs
 logs = get_build_logs_tool(67890)
@@ -170,11 +220,17 @@ logs = get_build_logs_tool(67890)
 
 ### Pipeline Management
 ```python
-# Discover available pipelines
+# Discover available pipelines (default project)
 pipelines = get_build_pipelines_tool()
+
+# Discover pipelines from specific project
+pipelines = get_build_pipelines_tool(project="MyProject")
 
 # Monitor specific pipeline builds
 pipeline_builds = get_builds_tool(definition_id=139, top=5)
+
+# Monitor pipeline builds from specific project
+pipeline_builds = get_builds_tool(definition_id=139, top=5, project="TargetProject")
 ```
 
 ## 🔍 Tool Categories
@@ -262,7 +318,7 @@ echo '{"method": "tools/list"}' | python mcp_server.py
 
 ## 📚 References
 
-- [Model Context Protocol (MCP)](https://github.com/anthropics/mcp)
+- [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol)
 - [Azure DevOps REST API](https://docs.microsoft.com/en-us/rest/api/azure/devops/)
 - [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)
 

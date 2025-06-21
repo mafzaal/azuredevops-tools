@@ -31,8 +31,9 @@ class DevOpsToolset:
         self.tfvc_client = self.connection.clients.get_tfvc_client()
         self.build_client = self.connection.clients.get_build_client()
 
-    def get_changeset_list(self, author: Optional[str] = None, from_changeset_id: Optional[int] = None, to_changeset_id: Optional[int] = None):
+    def get_changeset_list(self, author: Optional[str] = None, from_changeset_id: Optional[int] = None, to_changeset_id: Optional[int] = None, project: Optional[str] = None):
         """Retrieve changesets using azure-devops SDK."""
+        project_name = project or self.project
         logging.info(f"Retrieving changesets since ID {from_changeset_id} for author {author}...")
         search_criteria = TfvcChangesetSearchCriteria()
         if author:
@@ -44,7 +45,7 @@ class DevOpsToolset:
             search_criteria.to_id = to_changeset_id
 
         changesets = self.tfvc_client.get_changesets(
-            project=self.project,
+            project=project_name,
             search_criteria=search_criteria,
         )
         result = []
@@ -59,10 +60,11 @@ class DevOpsToolset:
         logging.info(f"Found {len(result)} changesets after ID {from_changeset_id}.")
         return result
     
-    def get_changeset(self, changeset_id):
+    def get_changeset(self, changeset_id, project: Optional[str] = None):
         """Retrieve a specific changeset by ID."""
+        project_name = project or self.project
         try:
-            changeset = self.tfvc_client.get_changeset(changeset_id, project=self.project)
+            changeset = self.tfvc_client.get_changeset(changeset_id, project=project_name)
             return {
                 'changesetId': changeset.changeset_id,
                 'comment': changeset.comment,
@@ -73,8 +75,9 @@ class DevOpsToolset:
             logging.error(f"Error retrieving changeset {changeset_id}: {e}")
             return None
     
-    def get_changeset_changes(self, changeset_id):
+    def get_changeset_changes(self, changeset_id, project: Optional[str] = None):
         """Get the files changed in a specific changeset."""
+        project_name = project or self.project
         try:
             changes: List[TfvcChange] = self.tfvc_client.get_changeset_changes(id=changeset_id)
             
@@ -99,15 +102,16 @@ class DevOpsToolset:
             logging.error(f"Error retrieving changes for changeset {changeset_id}: {e}")
             return []
 
-    def get_file_content(self, file_path, changeset_id,version_option='None'):
+    def get_file_content(self, file_path, changeset_id, version_option='None', project: Optional[str] = None):
         """Get content of a file at a specific changeset."""
+        project_name = project or self.project
         try:
             version_descriptor= TfvcVersionDescriptor(str(changeset_id),version_option,'changeset')
 
             chunks = self.tfvc_client.get_item_content(
                 path=file_path,
                 version_descriptor=version_descriptor,
-                project=self.project,
+                project=project_name,
                 download=True
             )
 
@@ -122,11 +126,11 @@ class DevOpsToolset:
             logging.error(f"Error retrieving content for {file_path} at changeset {changeset_id}: {e}")
             return ""
 
-    def get_file_diff(self, file_path, changeset_id):
+    def get_file_diff(self, file_path, changeset_id, project: Optional[str] = None):
         """Get diff of file changes in a specific changeset."""
         try:
-            current_content = self.get_file_content(file_path, changeset_id)
-            previous_content = self.get_file_content(file_path, changeset_id,version_option='Previous')
+            current_content = self.get_file_content(file_path, changeset_id, project=project)
+            previous_content = self.get_file_content(file_path, changeset_id, version_option='Previous', project=project)
             if not previous_content:
                 return f"New file: {file_path}\n\n{current_content}"
             
@@ -174,19 +178,21 @@ class DevOpsToolset:
         """
         return summary
 
-    def get_build(self, build_id: int) -> Dict[str, Any]:
+    def get_build(self, build_id: int, project: Optional[str] = None) -> Dict[str, Any]:
         """
         Retrieve details about a specific build.
         
         Args:
             build_id: The ID of the build to retrieve
+            project: Optional project name, defaults to instance project
             
         Returns:
             Dictionary containing build information including status and result
         """
+        project_name = project or self.project
         try:
             logging.info(f"Retrieving build {build_id}...")
-            build: Build = self.build_client.get_build(project=self.project, build_id=build_id)
+            build: Build = self.build_client.get_build(project=project_name, build_id=build_id)
             
             result = {
                 'id': build.id,
@@ -209,7 +215,7 @@ class DevOpsToolset:
             logging.error(f"Error retrieving build {build_id}: {e}")
             return {'error': str(e)}
             
-    def get_builds(self, definition_id: Optional[int] = None, top: int = 50, status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_builds(self, definition_id: Optional[int] = None, top: int = 50, status_filter: Optional[str] = None, project: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Retrieve multiple builds from the project.
         
@@ -217,15 +223,17 @@ class DevOpsToolset:
             definition_id: Optional definition ID to filter builds by specific pipeline
             top: Maximum number of builds to retrieve (default 50)
             status_filter: Optional status filter ('completed', 'inProgress', 'notStarted')
+            project: Optional project name, defaults to instance project
             
         Returns:
             List of dictionaries containing build information
         """
+        project_name = project or self.project
         try:
             logging.info(f"Retrieving up to {top} builds...")
             
             builds = self.build_client.get_builds(
-                project=self.project,
+                project=project_name,
                 definitions=[definition_id] if definition_id else None,
                 top=top,
                 status_filter=status_filter
@@ -256,24 +264,26 @@ class DevOpsToolset:
             logging.error(f"Error retrieving builds: {e}")
             return [{'error': str(e)}]
 
-    def get_build_logs(self, build_id: int) -> List[Dict[str, Any]]:
+    def get_build_logs(self, build_id: int, project: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Retrieve logs for a specific build.
         
         Args:
             build_id: The ID of the build to retrieve logs for
+            project: Optional project name, defaults to instance project
             
         Returns:
             List of dictionaries containing log information and content
         """
+        project_name = project or self.project
         try:
             logging.info(f"Retrieving logs for build {build_id}...")
-            logs = self.build_client.get_build_logs(project=self.project, build_id=build_id)
+            logs = self.build_client.get_build_logs(project=project_name, build_id=build_id)
             
             result = []
             for log in logs:
                 log_content = self.build_client.get_build_log_lines(
-                    project=self.project, 
+                    project=project_name, 
                     build_id=build_id, 
                     log_id=log.id
                 )
@@ -292,7 +302,7 @@ class DevOpsToolset:
             logging.error(f"Error retrieving logs for build {build_id}: {e}")
             return [{'error': str(e)}]
 
-    def f1e_get_build_tool(self, build_id: int) -> str:
+    def f1e_get_build_tool(self, build_id: int, project: Optional[str] = None) -> str:
         """
         LLM-friendly tool to retrieve build status and details.
         
@@ -301,11 +311,12 @@ class DevOpsToolset:
         
         Parameters:
             build_id (int): The ID of the build to retrieve
+            project (str, optional): Optional project name, defaults to instance project
             
         Returns:
             str: A formatted string with details about the build including status and result
         """
-        build_info = self.get_build(build_id)
+        build_info = self.get_build(build_id, project=project)
         
         if 'error' in build_info:
             return f"Error retrieving build {build_id}: {build_info['error']}"
@@ -340,7 +351,7 @@ class DevOpsToolset:
         
         return result    
     
-    def f1e_get_builds_tool(self, definition_id: Optional[int] = None, top: int = 50, status_filter: Optional[str] = None) -> str:
+    def f1e_get_builds_tool(self, definition_id: Optional[int] = None, top: int = 50, status_filter: Optional[str] = None, project: Optional[str] = None) -> str:
         """
         LLM-friendly tool to retrieve multiple builds.
         
@@ -351,11 +362,12 @@ class DevOpsToolset:
             definition_id (int, optional): Filter builds by specific pipeline/definition ID
             top (int): Maximum number of builds to retrieve (default 50)
             status_filter (str, optional): Filter by status ('completed', 'inProgress', 'notStarted')
+            project (str, optional): Optional project name, defaults to instance project
             
         Returns:
             str: A formatted string with details about multiple builds
         """
-        builds = self.get_builds(definition_id, top, status_filter)
+        builds = self.get_builds(definition_id, top, status_filter, project=project)
         
         if builds and 'error' in builds[0]:
             return f"Error retrieving builds: {builds[0]['error']}"
@@ -393,7 +405,7 @@ class DevOpsToolset:
         
         return result
 
-    def f1e_get_build_logs_tool(self, build_id: int) -> Dict[str, Any]:
+    def f1e_get_build_logs_tool(self, build_id: int, project: Optional[str] = None) -> Dict[str, Any]:
         """
         LLM-friendly tool to retrieve build logs summary with last 50 lines of content.
 
@@ -402,11 +414,12 @@ class DevOpsToolset:
 
         Parameters:
             build_id (int): The ID of the build to retrieve logs for
+            project (str, optional): Optional project name, defaults to instance project
 
         Returns:
             Dict[str, Any]: A dictionary containing build logs with metadata and preview content
         """
-        logs = self.get_build_logs(build_id)
+        logs = self.get_build_logs(build_id, project=project)
 
         if logs and 'error' in logs[0]:
             return {
@@ -447,7 +460,7 @@ class DevOpsToolset:
             'logs': structured_logs
         }
 
-    def f1e_get_build_log_full_content_tool(self, build_id: int, log_id: int) -> Dict[str, Any]:
+    def f1e_get_build_log_full_content_tool(self, build_id: int, log_id: int, project: Optional[str] = None) -> Dict[str, Any]:
         """
         LLM-friendly tool to retrieve full content of a specific build log.
         
@@ -456,19 +469,21 @@ class DevOpsToolset:
         Parameters:
             build_id (int): The ID of the build
             log_id (int): The ID of the specific log to retrieve full content for
+            project (str, optional): Optional project name, defaults to instance project
             
         Returns:
             Dict[str, Any]: A dictionary containing the full log content and metadata
         """
+        project_name = project or self.project
         try:
             log_content = self.build_client.get_build_log_lines(
-                project=self.project, 
+                project=project_name, 
                 build_id=build_id, 
                 log_id=log_id
             )
             
             # Get log metadata
-            logs = self.build_client.get_build_logs(project=self.project, build_id=build_id)
+            logs = self.build_client.get_build_logs(project=project_name, build_id=build_id)
             log_metadata = None
             for log in logs:
                 if log.id == log_id:
@@ -507,14 +522,15 @@ class DevOpsToolset:
                 'content': []
             }
     
-    def get_failed_tasks_with_logs(self, build_id: int) -> list:
+    def get_failed_tasks_with_logs(self, build_id: int, project: Optional[str] = None) -> list:
         """
         Returns a list of failed tasks for a build, each with the last 200 lines of its log.
         Each item in the list is a dict with task name, log id, and last 200 log lines.
         """
+        project_name = project or self.project
         try:
             # Get build timeline (contains task results and log ids)
-            timeline = self.build_client.get_build_timeline(project=self.project, build_id=build_id)
+            timeline = self.build_client.get_build_timeline(project=project_name, build_id=build_id)
             if not timeline or not timeline.records:
                 return []
             failed_tasks = []
@@ -522,7 +538,7 @@ class DevOpsToolset:
                 if record.result == 'failed' and record.log and record.log.id:
                     log_id = record.log.id
                     log_lines = self.build_client.get_build_log_lines(
-                        project=self.project,
+                        project=project_name,
                         build_id=build_id,
                         log_id=log_id
                     )
@@ -537,16 +553,20 @@ class DevOpsToolset:
             logging.error(f"Error retrieving failed tasks/logs for build {build_id}: {e}")
             return []
 
-    def get_build_pipelines(self) -> List[Dict[str, Any]]:
+    def get_build_pipelines(self, project: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Retrieve all build pipelines/definitions in the project.
+        
+        Args:
+            project: Optional project name, defaults to instance project
         
         Returns:
             List of dictionaries containing build pipeline information
         """
+        project_name = project or self.project
         try:
             logging.info("Retrieving all build pipelines...")
-            definitions = self.build_client.get_definitions(project=self.project)
+            definitions = self.build_client.get_definitions(project=project_name)
             
             result = []
             for definition in definitions:
@@ -575,17 +595,20 @@ class DevOpsToolset:
             logging.error(f"Error retrieving build pipelines: {e}")
             return [{'error': str(e)}]
 
-    def f1e_get_build_pipelines_tool(self) -> str:
+    def f1e_get_build_pipelines_tool(self, project: Optional[str] = None) -> str:
         """
         LLM-friendly tool to retrieve all build pipelines/definitions.
         
         This tool retrieves all build pipelines in the project and formats them in a 
         human-readable string format suitable for LLM consumption.
         
+        Parameters:
+            project (str, optional): Optional project name, defaults to instance project
+        
         Returns:
             str: A formatted string with details about all build pipelines
         """
-        pipelines = self.get_build_pipelines()
+        pipelines = self.get_build_pipelines(project=project)
         
         if pipelines and 'error' in pipelines[0]:
             return f"Error retrieving build pipelines: {pipelines[0]['error']}"
