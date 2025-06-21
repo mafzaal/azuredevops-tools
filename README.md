@@ -28,25 +28,56 @@ A comprehensive collection of Azure DevOps tools designed for seamless integrati
 
 ## 📦 Installation
 
-1. Clone this repository:
+### Option 1: Install as Package (Recommended)
+
+```bash
+# Clone and install in development mode
+git clone <repository-url>
+cd azuredevops-tools
+pip install -e .
+
+# Or install from PyPI (when published)
+pip install azuredevops-tools
+```
+
+### Option 2: Local Development
+
 ```bash
 git clone <repository-url>
 cd azuredevops-tools
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-3. Configure Azure DevOps connection in `devops_tools.py`
+## 🔧 Configuration
+
+Create a `.env` file in your project root with your Azure DevOps credentials:
+
+```env
+DEVOPS_PAT=your_personal_access_token
+DEVOPS_ORGANIZATION=your_organization_name
+DEVOPS_PROJECT=your_project_name
+```
 
 ## 🔧 Usage
 
-### Direct Tool Usage
+### As an Installed Package
 
 ```python
-from tools import get_changeset_tool, get_build_tool
+from azuredevops_tools import get_changeset_tool, get_build_tool
+
+# Get changeset information
+changeset_info = get_changeset_tool(12345)
+print(changeset_info)
+
+# Get build information  
+build_info = get_build_tool(67890)
+print(build_info)
+```
+
+### Direct Tool Usage (Local Development)
+
+```python
+from src.azuredevops_tools.tools import get_changeset_tool, get_build_tool
 
 # Get changeset information
 changeset_info = get_changeset_tool(12345)
