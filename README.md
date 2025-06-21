@@ -30,16 +30,23 @@ All tools support an optional `project` parameter to target specific Azure DevOp
 
 ## 📦 Installation
 
-### Option 1: Install as Package (Recommended)
+### Option 1: Install from PyPI (Recommended)
+
+```bash
+# Install from PyPI
+pip install azuredevops-tools
+
+# Or using uv
+uv add azuredevops-tools
+```
+
+### Option 2: Install from Source (Development)
 
 ```bash
 # Clone and install in development mode
 git clone <repository-url>
 cd azuredevops-tools
 uv pip install -e .
-
-# Or install from PyPI (when published)
-pip install azuredevops-tools
 ```
 
 ### Option 2: Local Development
@@ -256,6 +263,124 @@ pipeline_builds = get_builds_tool(definition_id=139, top=5, project="TargetProje
 - **Best For**: Problem diagnosis, failure analysis, debugging
 
 ## 🛠️ Development
+
+### Project Structure
+
+```
+azuredevops-tools/
+├── .github/workflows/          # CI/CD workflows
+│   ├── ci.yml                 # Continuous Integration
+│   └── publish.yml            # PyPI Publishing
+├── src/azuredevops_tools/     # Main package source
+├── tests/                     # Test suite
+├── examples/                  # Usage examples
+├── pyproject.toml            # Project configuration
+└── README.md                 # This file
+```
+
+### Local Development Setup
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd azuredevops-tools
+
+# Install with development dependencies
+uv sync --all-extras
+
+# Or use the Makefile
+make install
+```
+
+#### Development Commands
+
+```bash
+# Run tests
+make test
+# or with coverage
+make test-cov
+
+# Check code quality
+make lint
+
+# Format code
+make format
+
+# Build package
+make build
+
+# Clean build artifacts
+make clean
+
+# Publish to Test PyPI
+make publish-test
+
+# Publish to PyPI
+make publish
+```
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+#### Continuous Integration (`ci.yml`)
+- **Triggers**: Push to `main`/`develop` branches, pull requests
+- **Matrix Testing**: Python 3.11, 3.12, 3.13
+- **Steps**: 
+  - Install dependencies with uv
+  - Run tests with pytest
+  - Run code quality checks (black, isort, flake8)
+  - Upload coverage reports
+  - Build and validate package
+
+#### Publishing Workflow (`publish.yml`)
+- **Triggers**: 
+  - GitHub releases (automatic PyPI publish)
+  - Manual workflow dispatch (with Test PyPI option)
+- **Security**: Uses trusted publishing (OIDC) - no API tokens needed
+- **Steps**:
+  - Run full test suite across Python versions
+  - Build wheel and source distributions
+  - Validate package with twine
+  - Publish to PyPI or Test PyPI
+
+### Publishing to PyPI
+
+#### Automatic Publishing (Recommended)
+1. **Set up trusted publishing**:
+   - Go to PyPI → Account settings → Publishing
+   - Add GitHub repository as trusted publisher
+   - Environment name: `pypi` (for production) or `testpypi` (for testing)
+
+2. **Create a release**:
+   ```bash
+   # Update version in pyproject.toml and __init__.py
+   git tag v0.1.1
+   git push origin v0.1.1
+   ```
+   
+3. **Create GitHub release**: The workflow will automatically publish to PyPI
+
+#### Manual Publishing
+```bash
+# Build the package
+uv build
+
+# Publish to Test PyPI (optional)
+uv run twine upload --repository testpypi dist/*
+
+# Publish to PyPI
+uv run twine upload dist/*
+```
+
+#### Testing Published Package
+```bash
+# Test from Test PyPI
+pip install --index-url https://test.pypi.org/simple/ azuredevops-tools
+
+# Test from PyPI
+pip install azuredevops-tools
+```
 
 ### Adding New Tools
 
