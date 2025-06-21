@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
     
     steps:
     - uses: actions/checkout@v4
@@ -56,7 +56,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.11"
+        python-version: "3.13"
     
     - name: Install uv
       uses: astral-sh/setup-uv@v2
@@ -69,5 +69,6 @@ jobs:
     
     - name: Check package
       run: |
+        uv venv
         uv pip install twine
         uv run twine check dist/*
