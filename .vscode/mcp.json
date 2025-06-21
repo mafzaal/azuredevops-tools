@@ -1,0 +1,14 @@
+{
+    "servers": {
+        "azure-devops-mcp-server": {
+            "type": "stdio",
+            "command": "uv",
+            "args": [
+                "--directory",
+                "/home/mafzaal/source/azuredevops-tools",
+                "run",
+                "main.py"
+            ]
+        }
+    }
+}
