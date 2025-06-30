@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "azuredevops-tools": {
+      "command": "uvx",
+      "args": [
+        "azuredevops-tools"
+      ],
+      "env": {
+        "DEVOPS_PAT": "your-personal-access-token",
+        "DEVOPS_ORGANIZATION": "your-organization",
+        "DEVOPS_PROJECT": "your-project"
+      }
+    }
+  }
+}
