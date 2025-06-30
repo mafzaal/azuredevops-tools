@@ -779,16 +779,12 @@ class DevOpsToolset:
         logging.info(f"Retrieving Git commits from repository {repository_id}...")
         
         try:
-            search_criteria = {
-                'itemVersion': {'version': branch} if branch else None,
-                '$top': top,
-                '$skip': skip
-            }
-            
+            # Use the simplest possible call to avoid parameter issues
+            # According to Azure DevOps REST API, get_commits should accept basic parameters
             commits = self.git_client.get_commits(
                 repository_id=repository_id,
-                project=project_name,
-                search_criteria=search_criteria
+                project=project_name
+                # Note: Removing top and skip for now to isolate the issue
             )
             
             commit_list = []
@@ -815,8 +811,16 @@ class DevOpsToolset:
             return commit_list
             
         except Exception as e:
-            logging.error(f"Error retrieving Git commits from repository {repository_id}: {e}")
-            return []
+            error_msg = f"Error retrieving Git commits from repository {repository_id}: {str(e)}"
+            logging.error(error_msg)
+            # Return more detailed error information for LLM-friendly tools
+            return [{
+                'error': True,
+                'error_message': str(e),
+                'error_details': f"Failed to retrieve commits from repository '{repository_id}' in project '{project_name}'",
+                'repository_id': repository_id,
+                'project': project_name
+            }]
 
     def get_git_commit_details(self, repository_id: str, commit_id: str, 
                               project: Optional[str] = None) -> Dict[str, Any]:
@@ -1228,3 +1232,79 @@ class DevOpsToolset:
         except Exception as e:
             logging.error(f"Error retrieving policies for PR {pull_request_id}: {e}")
             return []
+
+    def f1e_get_git_commits_tool(self, repository_id: str, branch: Optional[str] = None, 
+                                top: int = 10, project: Optional[str] = None) -> str:
+        """
+        LLM-friendly tool to retrieve Git commits from a repository.
+        
+        This tool retrieves recent commits from a Git repository and formats them in a 
+        human-readable string format suitable for LLM consumption, with enhanced error handling.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            branch (str, optional): The branch name. If not provided, uses default branch.
+            top (int): Maximum number of commits to retrieve (default: 10).
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            str: A formatted string with commit details or error information.
+        """
+        commits = self.get_git_commits(repository_id, branch=branch, top=top, project=project)
+        
+        # Check for error in response
+        if commits and len(commits) == 1 and isinstance(commits[0], dict) and commits[0].get('error'):
+            error_info = commits[0]
+            return f"Error retrieving Git commits from repository '{repository_id}':\n\n" \
+                   f"Error: {error_info['error_message']}\n" \
+                   f"Details: {error_info['error_details']}\n" \
+                   f"Repository: {error_info['repository_id']}\n" \
+                   f"Project: {error_info['project']}"
+        
+        if not commits:
+            return f"No commits found in repository '{repository_id}'" + \
+                   (f" on branch '{branch}'" if branch else "") + \
+                   f" in project '{project or self.project}'"
+        
+        result = f"Found {len(commits)} commits from repository {repository_id}"
+        if branch:
+            result += f" on branch '{branch}'"
+        result += f" in project '{project or self.project}':\n\n"
+        
+        for commit in commits:
+            result += f"Commit: {commit['commitId'][:12]}..."
+            if commit.get('author') and commit['author'].get('date'):
+                result += f" ({commit['author']['date']})"
+            result += "\n"
+            
+            if commit.get('author'):
+                result += f"Author: {commit['author'].get('name', 'Unknown')}"
+                if commit['author'].get('email'):
+                    result += f" <{commit['author']['email']}>"
+                result += "\n"
+            
+            if commit.get('comment'):
+                # Truncate long commit messages for readability
+                comment = commit['comment'].strip()
+                if len(comment) > 100:
+                    comment = comment[:97] + "..."
+                result += f"Message: {comment}\n"
+            
+            if commit.get('changeCounts'):
+                try:
+                    changes = commit['changeCounts']
+                    if isinstance(changes, dict):
+                        adds = changes.get('Add', 0)
+                        edits = changes.get('Edit', 0) 
+                        deletes = changes.get('Delete', 0)
+                        total = adds + edits + deletes
+                        result += f"Changes: +{adds} ~{edits} -{deletes} ({total} total)\n"
+                except (TypeError, AttributeError):
+                    pass
+            
+            if commit.get('url'):
+                result += f"URL: {commit['url']}\n"
+            
+            result += "-" * 60 + "\n"
+        
+        return result

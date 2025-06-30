@@ -664,6 +664,11 @@ def get_git_commits_tool(repository_id: str, branch: Optional[str] = None,
     try:
         commits = devops.get_git_commits(repository_id, branch=branch, top=top, project=project)
         
+        # Check if we got an error response
+        if commits and len(commits) == 1 and isinstance(commits[0], dict) and commits[0].get('error'):
+            error_info = commits[0]
+            return f"Error retrieving commits from repository '{repository_id}': {error_info['error_message']}\n\nDetails: {error_info['error_details']}"
+        
         if not commits:
             return f"No commits found in repository '{repository_id}'" + (f" on branch '{branch}'" if branch else "")
         
