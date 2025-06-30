@@ -779,12 +779,24 @@ class DevOpsToolset:
         logging.info(f"Retrieving Git commits from repository {repository_id}...")
         
         try:
-            # Use the simplest possible call to avoid parameter issues
-            # According to Azure DevOps REST API, get_commits should accept basic parameters
+            # Create search criteria - this is required for the get_commits method
+            from azure.devops.v7_0.git.models import GitQueryCommitsCriteria
+            
+            search_criteria = GitQueryCommitsCriteria()
+            search_criteria.skip = skip
+            search_criteria.top = top
+            
+            # Set branch if provided
+            if branch:
+                search_criteria.item_version = {
+                    'version': branch,
+                    'version_type': 'branch'
+                }
+            
             commits = self.git_client.get_commits(
                 repository_id=repository_id,
+                search_criteria=search_criteria,
                 project=project_name
-                # Note: Removing top and skip for now to isolate the issue
             )
             
             commit_list = []
