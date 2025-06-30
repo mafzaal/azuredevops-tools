@@ -13,6 +13,8 @@ from .tools import (
     get_changeset_list_tool, 
     get_failed_tasks_with_logs_tool, 
     get_build_pipelines_tool,
+    # Project tools
+    get_projects_tool,
     # Git repository tools
     get_git_repositories_tool,
     get_git_repository_tool,
@@ -48,6 +50,9 @@ def create_mcp_server():
     mcp.add_tool(get_build_log_full_content_tool)
     mcp.add_tool(get_failed_tasks_with_logs_tool)
     mcp.add_tool(get_build_pipelines_tool)
+    
+    # Add project tools
+    mcp.add_tool(get_projects_tool)
     
     # Add Git repository tools
     mcp.add_tool(get_git_repositories_tool)

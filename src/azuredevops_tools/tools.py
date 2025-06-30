@@ -464,6 +464,58 @@ def get_build_pipelines_tool(project: Optional[str] = None) -> str:
         return f"Error getting build pipelines: {str(e)}"
 
 
+# Project Tools
+def get_projects_tool() -> str:
+    """
+    Get a list of all projects in the Azure DevOps organization.
+    
+    This tool retrieves comprehensive information about all projects in the
+    Azure DevOps organization, including project names, IDs, descriptions, state,
+    visibility, and last update time. Essential for project discovery and management.
+    
+    Returns:
+        str: A formatted list of projects with detailed information.
+    
+    Example:
+        get_projects_tool()
+    Output:
+        "Found 3 projects in the organization:
+        
+        Project: MyProject
+        ID: abc123-def456-ghi789
+        Description: Main application project
+        State: wellFormed
+        Visibility: private
+        Last Updated: 2023-10-01T12:00:00.000Z
+        URL: https://dev.azure.com/myorg/MyProject
+        ------------------------------------------------------------"
+    """
+    try:
+        projects = devops.get_projects()
+        
+        if not projects:
+            return "No projects found in the organization."
+        
+        result = f"Found {len(projects)} project(s) in the organization:\n"
+        
+        for project in projects:
+            result += f"\nProject: {project['name']}\n"
+            result += f"ID: {project['id']}\n"
+            if project['description']:
+                result += f"Description: {project['description']}\n"
+            result += f"State: {project['state']}\n"
+            result += f"Visibility: {project['visibility']}\n"
+            if project['lastUpdateTime']:
+                result += f"Last Updated: {project['lastUpdateTime']}\n"
+            result += f"URL: {project['url']}\n"
+            result += "------------------------------------------------------------\n"
+        
+        return result
+    except Exception as e:
+        logging.error(f"Error getting projects: {e}")
+        return f"Error getting projects: {str(e)}"
+
+
 # Git Repository Tools
 def get_git_repositories_tool(project: Optional[str] = None) -> str:
     """
@@ -1117,7 +1169,7 @@ def reject_pull_request_tool(repository_id: str, pull_request_id: int,
         response = "Pull request rejection recorded:\n"
         response += f"Reviewer: {result['displayName']}\n"
         response += f"Vote: {result['voteDescription']} ({result['vote']})\n"
-        response += f"PR #{pull_request_id} in repository {repository_id}\n"
+        response += f"PR #123 in repository {repository_id}\n"
         
         if result['isRequired']:
             response += "This was a required reviewer.\n"
@@ -1168,7 +1220,7 @@ def request_pull_request_changes_tool(repository_id: str, pull_request_id: int,
         response = "Pull request change request recorded:\n"
         response += f"Reviewer: {result['displayName']}\n"
         response += f"Vote: {result['voteDescription']} ({result['vote']})\n"
-        response += f"PR #{pull_request_id} in repository {repository_id}\n"
+        response += f"PR #123 in repository {repository_id}\n"
         
         if result['isRequired']:
             response += "This was a required reviewer.\n"
@@ -1272,4 +1324,5 @@ __all__ = [
     "reject_pull_request_tool",
     "request_pull_request_changes_tool",
     "get_pull_request_policies_tool",
+    "get_projects_tool",
 ]

@@ -2,7 +2,7 @@
 
 ## ✅ Status: ALL TOOLS SUCCESSFULLY REGISTERED
 
-Your Azure DevOps MCP server is fully configured and ready to use with all 21 tools properly registered.
+Your Azure DevOps MCP server is fully configured and ready to use with all 22 tools properly registered.
 
 ## 📋 Registered Tools
 
@@ -19,6 +19,9 @@ Your Azure DevOps MCP server is fully configured and ready to use with all 21 to
 - `get_build_log_full_content_tool` - Get complete content of a specific build log
 - `get_failed_tasks_with_logs_tool` - Get failed tasks and their logs for troubleshooting
 - `get_build_pipelines_tool` - Get list of all build pipelines/definitions
+
+### 🏢 Project Tools (1 tool)
+- `get_projects_tool` - Get list of all projects in the Azure DevOps organization
 
 ### 📁 Git Repository Tools (4 tools)
 - `get_git_repositories_tool` - Get list of all Git repositories in the project
@@ -38,7 +41,7 @@ Your Azure DevOps MCP server is fully configured and ready to use with all 21 to
 ## 🛠️ Server Configuration
 
 **Server Name:** `devops_tools`  
-**Description:** Comprehensive Azure DevOps Tools including Git repositories, pull requests, builds, changesets, and approval workflows  
+**Description:** Comprehensive Azure DevOps Tools including Git repositories, pull requests, builds, changesets, project management, and approval workflows  
 **Version:** 0.2.0  
 **Transport:** STDIO (for MCP protocol)
 

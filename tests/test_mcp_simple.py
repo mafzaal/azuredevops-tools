@@ -40,6 +40,8 @@ def main():
             get_build_log_full_content_tool,
             get_failed_tasks_with_logs_tool,
             get_build_pipelines_tool,
+            # Project tools
+            get_projects_tool,
             # Git repository tools
             get_git_repositories_tool,
             get_git_repository_tool,
@@ -71,6 +73,8 @@ def main():
             'get_build_log_full_content_tool',
             'get_failed_tasks_with_logs_tool',
             'get_build_pipelines_tool',
+            # Project tools (1)
+            'get_projects_tool',
             # Git repository tools (4)
             'get_git_repositories_tool',
             'get_git_repository_tool',
@@ -91,6 +95,7 @@ def main():
         print(f"  Expected tools: {len(expected_tools)}")
         print(f"  Changeset tools: 4")
         print(f"  Build tools: 6")
+        print(f"  Project tools: 1")
         print(f"  Git repository tools: 4")
         print(f"  Pull request tools: 4")
         print(f"  Approval workflow tools: 3")
@@ -105,16 +110,20 @@ def main():
         for tool in expected_tools[4:10]:
             print(f"    - {tool}")
         
+        print("  🏢 Project Tools:")
+        for tool in expected_tools[10:11]:
+            print(f"    - {tool}")
+        
         print("  📦 Git Repository Tools:")
-        for tool in expected_tools[10:14]:
+        for tool in expected_tools[11:15]:
             print(f"    - {tool}")
         
         print("  🔀 Pull Request Tools:")
-        for tool in expected_tools[14:18]:
+        for tool in expected_tools[15:19]:
             print(f"    - {tool}")
         
         print("  ✅ Approval Workflow Tools:")
-        for tool in expected_tools[18:]:
+        for tool in expected_tools[19:]:
             print(f"    - {tool}")
         
         print(f"\n✅ ALL TESTS PASSED!")

@@ -39,6 +39,37 @@ class DevOpsToolset:
         self.git_client = self.connection.clients.get_git_client()
         self.policy_client = self.connection.clients.get_policy_client()
         self.work_item_tracking_client = self.connection.clients.get_work_item_tracking_client()
+        self.core_client = self.connection.clients.get_core_client()
+
+    def get_projects(self) -> List[Dict[str, Any]]:
+        """
+        Retrieve all projects from Azure DevOps organization.
+        
+        Returns:
+            List of dictionaries containing project information including name, ID, state, and visibility
+        """
+        try:
+            logging.info("Retrieving projects from Azure DevOps...")
+            projects = self.core_client.get_projects()
+            
+            result = []
+            for project in projects:
+                result.append({
+                    'id': project.id,
+                    'name': project.name,
+                    'description': project.description or '',
+                    'state': project.state,
+                    'visibility': project.visibility,
+                    'url': project.url,
+                    'lastUpdateTime': project.last_update_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if project.last_update_time else None
+                })
+            
+            logging.info(f"Found {len(result)} projects.")
+            return result
+            
+        except Exception as e:
+            logging.error(f"Error retrieving projects: {e}")
+            return []
 
     def get_changeset_list(self, author: Optional[str] = None, from_changeset_id: Optional[int] = None, to_changeset_id: Optional[int] = None, project: Optional[str] = None):
         """Retrieve changesets using azure-devops SDK."""
