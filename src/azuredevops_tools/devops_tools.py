@@ -9,9 +9,9 @@ import logging
 from dotenv import load_dotenv
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
-from azure.devops.v7_0.tfvc.models import TfvcChange,TfvcVersionDescriptor,TfvcChangesetSearchCriteria
-from azure.devops.v7_0.build.models import Build
-from azure.devops.v7_0.git.models import (
+from azure.devops.v7_1.tfvc.models import TfvcChange,TfvcVersionDescriptor,TfvcChangesetSearchCriteria
+from azure.devops.v7_1.build.models import Build
+from azure.devops.v7_1.git.models import (
     GitPullRequest, GitPullRequestSearchCriteria,
     GitRepository, GitCommitRef, GitRefUpdate,
     GitPush, GitRepositoryRef, GitItem, GitCommit,
@@ -803,6 +803,8 @@ class DevOpsToolset:
             for commit in commits:
                 commit_dict = {
                     'commitId': commit.commit_id,
+                    
+                    'branch': commit.branch.name if commit.branch else None,
                     'comment': commit.comment,
                     'author': {
                         'name': commit.author.name,
@@ -841,7 +843,7 @@ class DevOpsToolset:
         
         Parameters:
             repository_id (str): The repository ID or name.
-            commit_id (str): The commit SHA.
+            commit_id (str): The commit SHA (can be abbreviated).
             project (str, optional): The project name. If not provided, uses default project.
             
         Returns:
@@ -851,29 +853,46 @@ class DevOpsToolset:
         logging.info(f"Retrieving Git commit details for {commit_id} from repository {repository_id}...")
         
         try:
-            commit = self.git_client.get_commit(
+            # If the commit ID is not a full SHA, search for it
+            # if len(commit_id) < 40:
+            #     logging.info(f"Commit ID {commit_id} is abbreviated, searching for full SHA...")
+            #     from azure.devops.v7_0.git.models import GitQueryCommitsCriteria
+            #     search_criteria = GitQueryCommitsCriteria(ids=commit_id)
+            #     commits = self.git_client.get_commits(
+            #         repository_id=repository_id,
+            #         search_criteria=search_criteria,
+            #         project=project_name
+            #     )
+            #     if commits:
+            #         commit_id = commits[0].commit_id
+            #         logging.info(f"Found full commit SHA: {commit_id}")
+            #     else:
+            #         logging.error(f"Could not find full commit SHA for {commit_id}")
+            #         return {}
+
+            commit = self.git_client.get_changes(
                 repository_id=repository_id,
                 commit_id=commit_id,
                 project=project_name
             )
             
             # Get commit changes
-            changes = self.git_client.get_changes(
-                repository_id=repository_id,
-                commit_id=commit_id,
-                project=project_name
-            )
+            # changes = self.git_client.get_changes(
+            #     repository_id=repository_id,
+            #     commit_id=commit_id,
+            #     project=project_name
+            # ).changes
             
-            change_list = []
-            for change in changes:
-                change_dict = {
-                    'changeType': str(change.change_type),
-                    'item': {
-                        'path': change.item.path if change.item else None,
-                        'gitObjectType': str(change.item.git_object_type) if change.item else None
-                    }
-                }
-                change_list.append(change_dict)
+            # change_list = []
+            # for change in changes:
+            #     change_dict = {
+            #         'changeType': str(change.change_type),
+            #         'item': {
+            #             'path': change.item.path if change.item else None,
+            #             'gitObjectType': str(change.item.git_object_type) if change.item else None
+            #         }
+            #     }
+            #     change_list.append(change_dict)
             
             return {
                 'commitId': commit.commit_id,
@@ -891,7 +910,7 @@ class DevOpsToolset:
                 'changeCounts': commit.change_counts,
                 'url': commit.url,
                 'remoteUrl': commit.remote_url,
-                'changes': change_list
+                # 'changes': change_list
             }
             
         except Exception as e:

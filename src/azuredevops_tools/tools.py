@@ -678,7 +678,7 @@ def get_git_commits_tool(repository_id: str, branch: Optional[str] = None,
         result += ":\n\n"
         
         for commit in commits:
-            result += f"Commit: {commit['commitId'][:12]}"
+            result += f"Commit: {commit['commitId']}"
             if commit['author'] and commit['author']['date']:
                 result += f" ({commit['author']['date']})"
             result += "\n"
@@ -874,7 +874,7 @@ def get_pull_requests_tool(repository_id: str, status: str = 'active',
             # Format branch names (remove refs/heads/ prefix)
             source_branch = pr['sourceRefName'].replace('refs/heads/', '') if pr['sourceRefName'] else 'unknown'
             target_branch = pr['targetRefName'].replace('refs/heads/', '') if pr['targetRefName'] else 'unknown'
-            result += f"Source: {source_branch} → Target: {target_branch}\n"
+            result += f"{source_branch} → {target_branch}\n"
             
             if pr['reviewers']:
                 result += "Reviewers:\n"
@@ -959,13 +959,13 @@ def get_pull_request_details_tool(repository_id: str, pull_request_id: int,
                 result += f" on {pr_details['creationDate']}"
             result += "\n"
         
-        if pr_details['closedBy'] and pr_details['closedDate']:
+        if pr_details.get('closedBy') and pr_details.get('closedDate'):
             result += f"Closed by: {pr_details['closedBy']['displayName']} on {pr_details['closedDate']}\n"
         
         # Format branch names
         source_branch = pr_details['sourceRefName'].replace('refs/heads/', '') if pr_details['sourceRefName'] else 'unknown'
         target_branch = pr_details['targetRefName'].replace('refs/heads/', '') if pr_details['targetRefName'] else 'unknown'
-        result += f"Source: {source_branch} → Target: {target_branch}\n"
+        result += f"{source_branch} → {target_branch}\n"
         
         if pr_details['description']:
             result += f"\nDescription:\n{pr_details['description']}\n"
@@ -1072,7 +1072,7 @@ def create_pull_request_tool(repository_id: str, title: str, description: str,
         # Format branch names
         source = result['sourceRefName'].replace('refs/heads/', '') if result['sourceRefName'] else source_branch
         target = result['targetRefName'].replace('refs/heads/', '') if result['targetRefName'] else target_branch
-        response += f"Source: {source} → Target: {target}\n"
+        response += f"{source} → {target}\n"
         
         if result['url']:
             response += f"URL: {result['url']}\n"
@@ -1113,7 +1113,7 @@ def approve_pull_request_tool(repository_id: str, pull_request_id: int,
             repository_id=repository_id,
             pull_request_id=pull_request_id,
             reviewer_id=reviewer_id,
-            vote=10,  # 10 = Approved
+            vote=10,
             project=project
         )
         
@@ -1164,7 +1164,7 @@ def reject_pull_request_tool(repository_id: str, pull_request_id: int,
             repository_id=repository_id,
             pull_request_id=pull_request_id,
             reviewer_id=reviewer_id,
-            vote=-10,  # -10 = Rejected
+            vote=-10,
             project=project
         )
         
@@ -1215,7 +1215,7 @@ def request_pull_request_changes_tool(repository_id: str, pull_request_id: int,
             repository_id=repository_id,
             pull_request_id=pull_request_id,
             reviewer_id=reviewer_id,
-            vote=-5,  # -5 = Waiting for Author
+            vote=-5,
             project=project
         )
         

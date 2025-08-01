@@ -308,7 +308,13 @@ class TestPullRequestApproval:
         assert "John Doe" in result
         assert "Approved (10)" in result
         assert "required reviewer" in result
-        mock_vote.assert_called_once_with("test-repo", 123, "john@example.com", 10, project=None)
+        mock_vote.assert_called_once_with(
+            repository_id="test-repo",
+            pull_request_id=123,
+            reviewer_id="john@example.com",
+            vote=10,
+            project=None
+        )
     
     @mock.patch('azuredevops_tools.tools.devops.update_pull_request_vote')
     def test_reject_pull_request_tool_success(self, mock_vote):
@@ -326,7 +332,13 @@ class TestPullRequestApproval:
         
         assert "Pull request rejection recorded" in result
         assert "Rejected (-10)" in result
-        mock_vote.assert_called_once_with("test-repo", 123, "john@example.com", -10, project=None)
+        mock_vote.assert_called_once_with(
+            repository_id="test-repo",
+            pull_request_id=123,
+            reviewer_id="john@example.com",
+            vote=-10,
+            project=None
+        )
     
     @mock.patch('azuredevops_tools.tools.devops.update_pull_request_vote')
     def test_request_pull_request_changes_tool_success(self, mock_vote):
@@ -344,7 +356,13 @@ class TestPullRequestApproval:
         
         assert "Pull request change request recorded" in result
         assert "Waiting for Author (-5)" in result
-        mock_vote.assert_called_once_with("test-repo", 123, "john@example.com", -5, project=None)
+        mock_vote.assert_called_once_with(
+            repository_id="test-repo",
+            pull_request_id=123,
+            reviewer_id="john@example.com",
+            vote=-5,
+            project=None
+        )
 
 
 class TestPullRequestPolicies:

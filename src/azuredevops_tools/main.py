@@ -35,7 +35,9 @@ from mcp.server.fastmcp import FastMCP
 def create_mcp_server():
     """Create and configure the MCP server with all available tools."""
     # Initialize FastMCP server
-    mcp = FastMCP("devops_tools", description="Comprehensive Azure DevOps Tools including Git repositories, pull requests, builds, changesets, and approval workflows", version="0.2.0")
+    mcp = FastMCP("devops_tools")
+    setattr(mcp, "description", "Azure DevOps tools for MCP integration.")
+    setattr(mcp, "version", "1.0.0")
     
     # Add changeset tools
     mcp.add_tool(get_changeset_tool)

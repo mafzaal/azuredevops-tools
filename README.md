@@ -32,6 +32,7 @@ All tools support an optional `project` parameter to target specific Azure DevOp
 | `get_build_log_full_content_tool` | build | Get complete build log content | Detailed analysis, thorough debugging |
 | `get_failed_tasks_with_logs_tool` | diagnostic | Get failed tasks with recent logs | Build failure analysis, troubleshooting |
 | `get_build_pipelines_tool` | pipeline | Get all available pipelines | Pipeline discovery, management |
+| `get_projects_tool` | project | Get all projects in the organization | Project discovery, management |
 
 #### Git Repository Tools
 

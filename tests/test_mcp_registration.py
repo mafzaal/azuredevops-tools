@@ -26,7 +26,18 @@ def test_mcp_server_tools():
     print()
     
     # Get the list of registered tools
-    tools = mcp.list_tools()
+    import inspect
+    import asyncio
+    tools_coro = mcp.list_tools()
+    if inspect.iscoroutine(tools_coro):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        tools = loop.run_until_complete(tools_coro)
+    else:
+        tools = tools_coro
     print(f"Total tools registered: {len(tools)}")
     print()
     
@@ -62,9 +73,11 @@ def test_mcp_server_tools():
             for tool_name in sorted(tools_list):
                 # Find the tool object to get description
                 tool_obj = next((t for t in tools if t.name == tool_name), None)
-                if tool_obj:
+                if tool_obj and tool_obj.description:
                     description = tool_obj.description[:80] + "..." if len(tool_obj.description) > 80 else tool_obj.description
                     print(f"  - {tool_name}: {description}")
+                elif tool_obj:
+                    print(f"  - {tool_name}: No description provided.")
             print()
     
     # Verify expected tool counts
@@ -132,37 +145,39 @@ def test_tool_parameters():
     """Test that tools have proper parameter definitions."""
     print("\nTesting tool parameter definitions...")
     mcp = create_mcp_server()
-    tools = mcp.list_tools()
-    
+    import inspect
+    tools_coro = mcp.list_tools()
+    if inspect.iscoroutine(tools_coro):
+        import asyncio
+        tools = asyncio.get_event_loop().run_until_complete(tools_coro)
+    else:
+        tools = tools_coro
+
     issues = []
-    
+
     for tool in tools:
         tool_name = tool.name
-        
         # Check that all tools have descriptions
-        if not tool.description:
+        if not getattr(tool, 'description', None):
             issues.append(f"{tool_name}: Missing description")
-        
         # Check that tools have proper parameter definitions
-        if hasattr(tool, 'input_schema') and tool.input_schema:
-            properties = tool.input_schema.get('properties', {})
-            
+        input_schema = getattr(tool, 'input_schema', None)
+        if input_schema:
+            properties = input_schema.get('properties', {})
             # All tools should have optional 'project' parameter
             if 'project' not in properties:
                 issues.append(f"{tool_name}: Missing 'project' parameter")
-            
             # Check required parameters exist
-            required = tool.input_schema.get('required', [])
+            required = input_schema.get('required', [])
             if tool_name in ['get_changeset_tool', 'get_build_tool'] and len(required) == 0:
                 issues.append(f"{tool_name}: Should have required parameters")
-    
+
     if issues:
         print("❌ Parameter definition issues:")
         for issue in issues:
             print(f"  - {issue}")
     else:
         print("✅ All tools have proper parameter definitions!")
-    
     return len(issues) == 0
 
 
