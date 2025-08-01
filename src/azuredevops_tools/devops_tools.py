@@ -9,8 +9,14 @@ import logging
 from dotenv import load_dotenv
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
-from azure.devops.v7_0.tfvc.models import TfvcChange,TfvcVersionDescriptor,TfvcChangesetSearchCriteria
-from azure.devops.v7_0.build.models import Build
+from azure.devops.v7_1.tfvc.models import TfvcChange,TfvcVersionDescriptor,TfvcChangesetSearchCriteria
+from azure.devops.v7_1.build.models import Build
+from azure.devops.v7_1.git.models import (
+    GitPullRequest, GitPullRequestSearchCriteria,
+    GitRepository, GitCommitRef, GitRefUpdate,
+    GitPush, GitRepositoryRef, GitItem, GitCommit,
+    IdentityRefWithVote
+)
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -30,6 +36,40 @@ class DevOpsToolset:
         self.connection = Connection(base_url=organization_url, creds=credentials)
         self.tfvc_client = self.connection.clients.get_tfvc_client()
         self.build_client = self.connection.clients.get_build_client()
+        self.git_client = self.connection.clients.get_git_client()
+        self.policy_client = self.connection.clients.get_policy_client()
+        self.work_item_tracking_client = self.connection.clients.get_work_item_tracking_client()
+        self.core_client = self.connection.clients.get_core_client()
+
+    def get_projects(self) -> List[Dict[str, Any]]:
+        """
+        Retrieve all projects from Azure DevOps organization.
+        
+        Returns:
+            List of dictionaries containing project information including name, ID, state, and visibility
+        """
+        try:
+            logging.info("Retrieving projects from Azure DevOps...")
+            projects = self.core_client.get_projects()
+            
+            result = []
+            for project in projects:
+                result.append({
+                    'id': project.id,
+                    'name': project.name,
+                    'description': project.description or '',
+                    'state': project.state,
+                    'visibility': project.visibility,
+                    'url': project.url,
+                    'lastUpdateTime': project.last_update_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if project.last_update_time else None
+                })
+            
+            logging.info(f"Found {len(result)} projects.")
+            return result
+            
+        except Exception as e:
+            logging.error(f"Error retrieving projects: {e}")
+            return []
 
     def get_changeset_list(self, author: Optional[str] = None, from_changeset_id: Optional[int] = None, to_changeset_id: Optional[int] = None, project: Optional[str] = None):
         """Retrieve changesets using azure-devops SDK."""
@@ -639,6 +679,663 @@ class DevOpsToolset:
                 result += f"Repository: {pipeline['repository']['name']} ({pipeline['repository']['type']})\n"
             
             result += f"URL: {pipeline['url']}\n"
+            result += "-" * 60 + "\n"
+        
+        return result
+
+    # Git Repository Operations
+    def get_git_repositories(self, project: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get all Git repositories in the project.
+        
+        Parameters:
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            List[Dict[str, Any]]: List of repository information dictionaries.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving Git repositories for project {project_name}...")
+        
+        try:
+            repositories = self.git_client.get_repositories(project=project_name)
+            
+            repo_list = []
+            for repo in repositories:
+                repo_dict = {
+                    'id': repo.id,
+                    'name': repo.name,
+                    'url': repo.url,
+                    'defaultBranch': repo.default_branch,
+                    'size': repo.size,
+                    'remoteUrl': repo.remote_url,
+                    'sshUrl': repo.ssh_url,
+                    'webUrl': repo.web_url,
+                    'isDisabled': repo.is_disabled,
+                    'isFork': repo.is_fork,
+                    'projectId': repo.project.id if repo.project else None,
+                    'projectName': repo.project.name if repo.project else None
+                }
+                repo_list.append(repo_dict)
+            
+            return repo_list
+            
+        except Exception as e:
+            logging.error(f"Error retrieving Git repositories: {e}")
+            return []
+
+    def get_git_repository(self, repository_id: str, project: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get details of a specific Git repository.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            Dict[str, Any]: Repository information dictionary.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving Git repository {repository_id} from project {project_name}...")
+        
+        try:
+            repository = self.git_client.get_repository(project=project_name, repository_id=repository_id)
+            
+            return {
+                'id': repository.id,
+                'name': repository.name,
+                'url': repository.url,
+                'defaultBranch': repository.default_branch,
+                'size': repository.size,
+                'remoteUrl': repository.remote_url,
+                'sshUrl': repository.ssh_url,
+                'webUrl': repository.web_url,
+                'isDisabled': repository.is_disabled,
+                'isFork': repository.is_fork,
+                'projectId': repository.project.id if repository.project else None,
+                'projectName': repository.project.name if repository.project else None
+            }
+            
+        except Exception as e:
+            logging.error(f"Error retrieving Git repository {repository_id}: {e}")
+            return {}
+
+    def get_git_commits(self, repository_id: str, branch: Optional[str] = None, top: int = 50, 
+                       skip: int = 0, project: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get Git commits from a repository.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            branch (str, optional): The branch name. If not provided, uses default branch.
+            top (int): Maximum number of commits to retrieve.
+            skip (int): Number of commits to skip.
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            List[Dict[str, Any]]: List of commit information dictionaries.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving Git commits from repository {repository_id}...")
+        
+        try:
+            # Create search criteria - this is required for the get_commits method
+            from azure.devops.v7_0.git.models import GitQueryCommitsCriteria
+            
+            search_criteria = GitQueryCommitsCriteria()
+            search_criteria.skip = skip
+            search_criteria.top = top
+            
+            # Set branch if provided
+            if branch:
+                search_criteria.item_version = {
+                    'version': branch,
+                    'version_type': 'branch'
+                }
+            
+            commits = self.git_client.get_commits(
+                repository_id=repository_id,
+                search_criteria=search_criteria,
+                project=project_name
+            )
+            
+            commit_list = []
+            for commit in commits:
+                commit_dict = {
+                    'commitId': commit.commit_id,
+                    
+                    'branch': commit.branch.name if commit.branch else None,
+                    'comment': commit.comment,
+                    'author': {
+                        'name': commit.author.name,
+                        'email': commit.author.email,
+                        'date': commit.author.date.isoformat() if commit.author.date else None
+                    } if commit.author else None,
+                    'committer': {
+                        'name': commit.committer.name,
+                        'email': commit.committer.email,
+                        'date': commit.committer.date.isoformat() if commit.committer.date else None
+                    } if commit.committer else None,
+                    'changeCounts': commit.change_counts,
+                    'url': commit.url,
+                    'remoteUrl': commit.remote_url
+                }
+                commit_list.append(commit_dict)
+            
+            return commit_list
+            
+        except Exception as e:
+            error_msg = f"Error retrieving Git commits from repository {repository_id}: {str(e)}"
+            logging.error(error_msg)
+            # Return more detailed error information for LLM-friendly tools
+            return [{
+                'error': True,
+                'error_message': str(e),
+                'error_details': f"Failed to retrieve commits from repository '{repository_id}' in project '{project_name}'",
+                'repository_id': repository_id,
+                'project': project_name
+            }]
+
+    def get_git_commit_details(self, repository_id: str, commit_id: str, 
+                              project: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get detailed information about a specific Git commit.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            commit_id (str): The commit SHA (can be abbreviated).
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            Dict[str, Any]: Detailed commit information.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving Git commit details for {commit_id} from repository {repository_id}...")
+        
+        try:
+            # If the commit ID is not a full SHA, search for it
+            # if len(commit_id) < 40:
+            #     logging.info(f"Commit ID {commit_id} is abbreviated, searching for full SHA...")
+            #     from azure.devops.v7_0.git.models import GitQueryCommitsCriteria
+            #     search_criteria = GitQueryCommitsCriteria(ids=commit_id)
+            #     commits = self.git_client.get_commits(
+            #         repository_id=repository_id,
+            #         search_criteria=search_criteria,
+            #         project=project_name
+            #     )
+            #     if commits:
+            #         commit_id = commits[0].commit_id
+            #         logging.info(f"Found full commit SHA: {commit_id}")
+            #     else:
+            #         logging.error(f"Could not find full commit SHA for {commit_id}")
+            #         return {}
+
+            commit = self.git_client.get_changes(
+                repository_id=repository_id,
+                commit_id=commit_id,
+                project=project_name
+            )
+            
+            # Get commit changes
+            # changes = self.git_client.get_changes(
+            #     repository_id=repository_id,
+            #     commit_id=commit_id,
+            #     project=project_name
+            # ).changes
+            
+            # change_list = []
+            # for change in changes:
+            #     change_dict = {
+            #         'changeType': str(change.change_type),
+            #         'item': {
+            #             'path': change.item.path if change.item else None,
+            #             'gitObjectType': str(change.item.git_object_type) if change.item else None
+            #         }
+            #     }
+            #     change_list.append(change_dict)
+            
+            return {
+                'commitId': commit.commit_id,
+                'comment': commit.comment,
+                'author': {
+                    'name': commit.author.name,
+                    'email': commit.author.email,
+                    'date': commit.author.date.isoformat() if commit.author.date else None
+                } if commit.author else None,
+                'committer': {
+                    'name': commit.committer.name,
+                    'email': commit.committer.email,
+                    'date': commit.committer.date.isoformat() if commit.committer.date else None
+                } if commit.committer else None,
+                'changeCounts': commit.change_counts,
+                'url': commit.url,
+                'remoteUrl': commit.remote_url,
+                # 'changes': change_list
+            }
+            
+        except Exception as e:
+            logging.error(f"Error retrieving Git commit details for {commit_id}: {e}")
+            return {}
+
+    # Pull Request Operations
+    def get_pull_requests(self, repository_id: str, status: str = 'active', 
+                         target_branch: Optional[str] = None, source_branch: Optional[str] = None,
+                         creator: Optional[str] = None, reviewer: Optional[str] = None,
+                         top: int = 50, project: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get pull requests from a Git repository.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            status (str): PR status ('active', 'completed', 'abandoned', 'all').
+            target_branch (str, optional): Filter by target branch.
+            source_branch (str, optional): Filter by source branch.
+            creator (str, optional): Filter by creator.
+            reviewer (str, optional): Filter by reviewer.
+            top (int): Maximum number of PRs to retrieve.
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            List[Dict[str, Any]]: List of pull request information dictionaries.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving pull requests from repository {repository_id}...")
+        
+        try:
+            search_criteria = GitPullRequestSearchCriteria()
+            
+            if status != 'all':
+                if status == 'active':
+                    search_criteria.status = 'active'
+                elif status == 'completed':
+                    search_criteria.status = 'completed'
+                elif status == 'abandoned':
+                    search_criteria.status = 'abandoned'
+            
+            if target_branch:
+                search_criteria.target_ref_name = f"refs/heads/{target_branch}"
+            if source_branch:
+                search_criteria.source_ref_name = f"refs/heads/{source_branch}"
+            if creator:
+                search_criteria.creator_id = creator
+            if reviewer:
+                search_criteria.reviewer_id = reviewer
+            
+            pull_requests = self.git_client.get_pull_requests(
+                repository_id=repository_id,
+                search_criteria=search_criteria,
+                project=project_name,
+                top=top
+            )
+            
+            pr_list = []
+            for pr in pull_requests:
+                pr_dict = {
+                    'pullRequestId': pr.pull_request_id,
+                    'title': pr.title,
+                    'description': pr.description,
+                    'status': str(pr.status),
+                    'createdBy': {
+                        'displayName': pr.created_by.display_name,
+                        'uniqueName': pr.created_by.unique_name,
+                        'id': pr.created_by.id
+                    } if pr.created_by else None,
+                    'creationDate': pr.creation_date.isoformat() if pr.creation_date else None,
+                    'closedDate': pr.closed_date.isoformat() if pr.closed_date else None,
+                    'sourceRefName': pr.source_ref_name,
+                    'targetRefName': pr.target_ref_name,
+                    'lastMergeSourceCommit': pr.last_merge_source_commit.commit_id if pr.last_merge_source_commit else None,
+                    'lastMergeTargetCommit': pr.last_merge_target_commit.commit_id if pr.last_merge_target_commit else None,
+                    'isDraft': pr.is_draft,
+                    'mergeStatus': str(pr.merge_status) if pr.merge_status else None,
+                    'url': pr.url,
+                    'reviewers': [
+                        {
+                            'displayName': reviewer.display_name,
+                            'uniqueName': reviewer.unique_name,
+                            'id': reviewer.id,
+                            'vote': reviewer.vote,
+                            'isRequired': reviewer.is_required,
+                            'isFlagged': reviewer.is_flagged
+                        } for reviewer in pr.reviewers
+                    ] if pr.reviewers else []
+                }
+                pr_list.append(pr_dict)
+            
+            return pr_list
+            
+        except Exception as e:
+            logging.error(f"Error retrieving pull requests from repository {repository_id}: {e}")
+            return []
+
+    def get_pull_request_details(self, repository_id: str, pull_request_id: int, 
+                                project: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get detailed information about a specific pull request.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            pull_request_id (int): The pull request ID.
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            Dict[str, Any]: Detailed pull request information.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving pull request details for PR {pull_request_id}...")
+        
+        try:
+            pr = self.git_client.get_pull_request(
+                repository_id=repository_id,
+                pull_request_id=pull_request_id,
+                project=project_name
+            )
+            
+            # Get work items linked to PR
+            work_items = []
+            try:
+                work_item_refs = self.git_client.get_pull_request_work_item_refs(
+                    repository_id=repository_id,
+                    pull_request_id=pull_request_id,
+                    project=project_name
+                )
+                for wi_ref in work_item_refs:
+                    work_items.append({
+                        'id': wi_ref.id,
+                        'url': wi_ref.url
+                    })
+            except:
+                pass  # Work items might not be available
+            
+            return {
+                'pullRequestId': pr.pull_request_id,
+                'title': pr.title,
+                'description': pr.description,
+                'status': str(pr.status),
+                'createdBy': {
+                    'displayName': pr.created_by.display_name,
+                    'uniqueName': pr.created_by.unique_name,
+                    'id': pr.created_by.id
+                } if pr.created_by else None,
+                'creationDate': pr.creation_date.isoformat() if pr.creation_date else None,
+                'closedDate': pr.closed_date.isoformat() if pr.closed_date else None,
+                'closedBy': {
+                    'displayName': pr.closed_by.display_name,
+                    'uniqueName': pr.closed_by.unique_name,
+                    'id': pr.closed_by.id
+                } if pr.closed_by else None,
+                'sourceRefName': pr.source_ref_name,
+                'targetRefName': pr.target_ref_name,
+                'lastMergeSourceCommit': pr.last_merge_source_commit.commit_id if pr.last_merge_source_commit else None,
+                'lastMergeTargetCommit': pr.last_merge_target_commit.commit_id if pr.last_merge_target_commit else None,
+                'isDraft': pr.is_draft,
+                'mergeStatus': str(pr.merge_status) if pr.merge_status else None,
+                'url': pr.url,
+                'reviewers': [
+                    {
+                        'displayName': reviewer.display_name,
+                        'uniqueName': reviewer.unique_name,
+                        'id': reviewer.id,
+                        'vote': reviewer.vote,
+                        'isRequired': reviewer.is_required,
+                        'isFlagged': reviewer.is_flagged,
+                        'hasDeclined': reviewer.has_declined
+                    } for reviewer in pr.reviewers
+                ] if pr.reviewers else [],
+                'workItemRefs': work_items,
+                'labels': [label.name for label in pr.labels] if pr.labels else [],
+                'completionOptions': pr.completion_options,
+                'completionQueueTime': pr.completion_queue_time.isoformat() if pr.completion_queue_time else None
+            }
+            
+        except Exception as e:
+            logging.error(f"Error retrieving pull request details for PR {pull_request_id}: {e}")
+            return {}
+
+    def create_pull_request(self, repository_id: str, title: str, description: str,
+                           source_branch: str, target_branch: str, 
+                           reviewers: Optional[List[str]] = None, work_items: Optional[List[int]] = None,
+                           is_draft: bool = False, project: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Create a new pull request.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            title (str): The pull request title.
+            description (str): The pull request description.
+            source_branch (str): The source branch name.
+            target_branch (str): The target branch name.
+            reviewers (List[str], optional): List of reviewer IDs or emails.
+            work_items (List[int], optional): List of work item IDs to link.
+            is_draft (bool): Whether to create as draft PR.
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            Dict[str, Any]: Created pull request information.
+        """
+        project_name = project or self.project
+        logging.info(f"Creating pull request from {source_branch} to {target_branch}...")
+        
+        try:
+            # Create the pull request object
+            pr = GitPullRequest()
+            pr.title = title
+            pr.description = description
+            pr.source_ref_name = f"refs/heads/{source_branch}"
+            pr.target_ref_name = f"refs/heads/{target_branch}"
+            pr.is_draft = is_draft
+            
+            # Add reviewers if provided
+            if reviewers:
+                pr.reviewers = []
+                for reviewer_id in reviewers:
+                    reviewer = IdentityRefWithVote()
+                    reviewer.id = reviewer_id
+                    pr.reviewers.append(reviewer)
+            
+            # Create the pull request
+            created_pr = self.git_client.create_pull_request(
+                git_pull_request_to_create=pr,
+                repository_id=repository_id,
+                project=project_name
+            )
+            
+            return {
+                'pullRequestId': created_pr.pull_request_id,
+                'title': created_pr.title,
+                'description': created_pr.description,
+                'status': str(created_pr.status),
+                'createdBy': {
+                    'displayName': created_pr.created_by.display_name,
+                    'uniqueName': created_pr.created_by.unique_name,
+                    'id': created_pr.created_by.id
+                } if created_pr.created_by else None,
+                'creationDate': created_pr.creation_date.isoformat() if created_pr.creation_date else None,
+                'sourceRefName': created_pr.source_ref_name,
+                'targetRefName': created_pr.target_ref_name,
+                'isDraft': created_pr.is_draft,
+                'url': created_pr.url
+            }
+            
+        except Exception as e:
+            logging.error(f"Error creating pull request: {e}")
+            return {'error': str(e)}
+
+    def update_pull_request_vote(self, repository_id: str, pull_request_id: int,
+                                reviewer_id: str, vote: int, project: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Update a reviewer's vote on a pull request.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            pull_request_id (int): The pull request ID.
+            reviewer_id (str): The reviewer's ID.
+            vote (int): The vote (-10: rejected, -5: waiting for author, 0: no vote, 5: approved with suggestions, 10: approved).
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            Dict[str, Any]: Updated reviewer information.
+        """
+        project_name = project or self.project
+        logging.info(f"Updating vote for PR {pull_request_id} by reviewer {reviewer_id}...")
+        
+        try:
+            reviewer = IdentityRefWithVote()
+            reviewer.id = reviewer_id
+            reviewer.vote = vote
+            
+            updated_reviewer = self.git_client.create_pull_request_reviewer(
+                reviewer=reviewer,
+                repository_id=repository_id,
+                pull_request_id=pull_request_id,
+                reviewer_id=reviewer_id,
+                project=project_name
+            )
+            
+            vote_description = {
+                -10: "Rejected",
+                -5: "Waiting for Author", 
+                0: "No Vote",
+                5: "Approved with Suggestions",
+                10: "Approved"
+            }.get(vote, "Unknown")
+            
+            return {
+                'reviewerId': updated_reviewer.id,
+                'displayName': updated_reviewer.display_name,
+                'vote': updated_reviewer.vote,
+                'voteDescription': vote_description,
+                'isRequired': updated_reviewer.is_required,
+                'isFlagged': updated_reviewer.is_flagged
+            }
+            
+        except Exception as e:
+            logging.error(f"Error updating vote for PR {pull_request_id}: {e}")
+            return {'error': str(e)}
+
+    def get_pull_request_policies(self, repository_id: str, pull_request_id: int, 
+                                 project: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get branch policies that apply to a pull request.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            pull_request_id (int): The pull request ID.
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            List[Dict[str, Any]]: List of policy evaluation records.
+        """
+        project_name = project or self.project
+        logging.info(f"Retrieving policies for PR {pull_request_id}...")
+        
+        try:
+            # Get PR details first to get artifact ID
+            pr = self.git_client.get_pull_request(
+                repository_id=repository_id,
+                pull_request_id=pull_request_id,
+                project=project_name
+            )
+            
+            # Get policy evaluations
+            artifact_id = f"vstfs:///CodeReview/CodeReviewId/{project_name}/{pull_request_id}"
+            
+            policy_evaluations = self.policy_client.get_policy_evaluations(
+                project=project_name,
+                artifact_id=artifact_id
+            )
+            
+            policy_list = []
+            for evaluation in policy_evaluations:
+                policy_dict = {
+                    'evaluationId': evaluation.evaluation_id,
+                    'status': str(evaluation.status),
+                    'policyId': evaluation.policy_id,
+                    'startedDate': evaluation.started_date.isoformat() if evaluation.started_date else None,
+                    'completedDate': evaluation.completed_date.isoformat() if evaluation.completed_date else None,
+                    'context': evaluation.context,
+                    'configuration': evaluation.configuration
+                }
+                policy_list.append(policy_dict)
+            
+            return policy_list
+            
+        except Exception as e:
+            logging.error(f"Error retrieving policies for PR {pull_request_id}: {e}")
+            return []
+
+    def f1e_get_git_commits_tool(self, repository_id: str, branch: Optional[str] = None, 
+                                top: int = 10, project: Optional[str] = None) -> str:
+        """
+        LLM-friendly tool to retrieve Git commits from a repository.
+        
+        This tool retrieves recent commits from a Git repository and formats them in a 
+        human-readable string format suitable for LLM consumption, with enhanced error handling.
+        
+        Parameters:
+            repository_id (str): The repository ID or name.
+            branch (str, optional): The branch name. If not provided, uses default branch.
+            top (int): Maximum number of commits to retrieve (default: 10).
+            project (str, optional): The project name. If not provided, uses default project.
+            
+        Returns:
+            str: A formatted string with commit details or error information.
+        """
+        commits = self.get_git_commits(repository_id, branch=branch, top=top, project=project)
+        
+        # Check for error in response
+        if commits and len(commits) == 1 and isinstance(commits[0], dict) and commits[0].get('error'):
+            error_info = commits[0]
+            return f"Error retrieving Git commits from repository '{repository_id}':\n\n" \
+                   f"Error: {error_info['error_message']}\n" \
+                   f"Details: {error_info['error_details']}\n" \
+                   f"Repository: {error_info['repository_id']}\n" \
+                   f"Project: {error_info['project']}"
+        
+        if not commits:
+            return f"No commits found in repository '{repository_id}'" + \
+                   (f" on branch '{branch}'" if branch else "") + \
+                   f" in project '{project or self.project}'"
+        
+        result = f"Found {len(commits)} commits from repository {repository_id}"
+        if branch:
+            result += f" on branch '{branch}'"
+        result += f" in project '{project or self.project}':\n\n"
+        
+        for commit in commits:
+            result += f"Commit: {commit['commitId'][:12]}..."
+            if commit.get('author') and commit['author'].get('date'):
+                result += f" ({commit['author']['date']})"
+            result += "\n"
+            
+            if commit.get('author'):
+                result += f"Author: {commit['author'].get('name', 'Unknown')}"
+                if commit['author'].get('email'):
+                    result += f" <{commit['author']['email']}>"
+                result += "\n"
+            
+            if commit.get('comment'):
+                # Truncate long commit messages for readability
+                comment = commit['comment'].strip()
+                if len(comment) > 100:
+                    comment = comment[:97] + "..."
+                result += f"Message: {comment}\n"
+            
+            if commit.get('changeCounts'):
+                try:
+                    changes = commit['changeCounts']
+                    if isinstance(changes, dict):
+                        adds = changes.get('Add', 0)
+                        edits = changes.get('Edit', 0) 
+                        deletes = changes.get('Delete', 0)
+                        total = adds + edits + deletes
+                        result += f"Changes: +{adds} ~{edits} -{deletes} ({total} total)\n"
+                except (TypeError, AttributeError):
+                    pass
+            
+            if commit.get('url'):
+                result += f"URL: {commit['url']}\n"
+            
             result += "-" * 60 + "\n"
         
         return result

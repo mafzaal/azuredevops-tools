@@ -14,6 +14,9 @@ on:
         default: false
         type: boolean
 
+permissions:
+  id-token: write  # For trusted publishing
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -87,8 +90,6 @@ jobs:
     environment: 
       name: ${{ github.event.inputs.test_pypi == 'true' && 'testpypi' || 'pypi' }}
       url: ${{ github.event.inputs.test_pypi == 'true' && 'https://test.pypi.org/p/azuredevops-tools' || 'https://pypi.org/p/azuredevops-tools' }}
-    permissions:
-      id-token: write  # For trusted publishing
     
     steps:
     - name: Download build artifacts

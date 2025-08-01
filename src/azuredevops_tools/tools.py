@@ -464,6 +464,845 @@ def get_build_pipelines_tool(project: Optional[str] = None) -> str:
         return f"Error getting build pipelines: {str(e)}"
 
 
+# Project Tools
+def get_projects_tool() -> str:
+    """
+    Get a list of all projects in the Azure DevOps organization.
+    
+    This tool retrieves comprehensive information about all projects in the
+    Azure DevOps organization, including project names, IDs, descriptions, state,
+    visibility, and last update time. Essential for project discovery and management.
+    
+    Returns:
+        str: A formatted list of projects with detailed information.
+    
+    Example:
+        get_projects_tool()
+    Output:
+        "Found 3 projects in the organization:
+        
+        Project: MyProject
+        ID: abc123-def456-ghi789
+        Description: Main application project
+        State: wellFormed
+        Visibility: private
+        Last Updated: 2023-10-01T12:00:00.000Z
+        URL: https://dev.azure.com/myorg/MyProject
+        ------------------------------------------------------------"
+    """
+    try:
+        projects = devops.get_projects()
+        
+        if not projects:
+            return "No projects found in the organization."
+        
+        result = f"Found {len(projects)} project(s) in the organization:\n"
+        
+        for project in projects:
+            result += f"\nProject: {project['name']}\n"
+            result += f"ID: {project['id']}\n"
+            if project['description']:
+                result += f"Description: {project['description']}\n"
+            result += f"State: {project['state']}\n"
+            result += f"Visibility: {project['visibility']}\n"
+            if project['lastUpdateTime']:
+                result += f"Last Updated: {project['lastUpdateTime']}\n"
+            result += f"URL: {project['url']}\n"
+            result += "------------------------------------------------------------\n"
+        
+        return result
+    except Exception as e:
+        logging.error(f"Error getting projects: {e}")
+        return f"Error getting projects: {str(e)}"
+
+
+# Git Repository Tools
+def get_git_repositories_tool(project: Optional[str] = None) -> str:
+    """
+    Get a list of all Git repositories in the Azure DevOps project.
+    
+    This tool retrieves comprehensive information about all Git repositories
+    in the project, including repository names, URLs, default branches, and metadata.
+    Essential for repository discovery and management.
+    
+    Parameters:
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: A formatted list of Git repositories with detailed information.
+    
+    Example:
+        get_git_repositories_tool()
+    Output:
+        "Found 3 Git repositories:
+        
+        Repository: my-app
+        ID: abc123-def456-ghi789
+        Default Branch: refs/heads/main
+        Size: 15.2 MB
+        Remote URL: https://dev.azure.com/myorg/myproject/_git/my-app
+        SSH URL: git@ssh.dev.azure.com:v3/myorg/myproject/my-app
+        Web URL: https://dev.azure.com/myorg/myproject/_git/my-app
+        Status: Active
+        ------------------------------------------------------------"
+    """
+    try:
+        repositories = devops.get_git_repositories(project=project)
+        
+        if not repositories:
+            return "No Git repositories found in the project."
+        
+        result = f"Found {len(repositories)} Git repositories:\n\n"
+        
+        for repo in repositories:
+            result += f"Repository: {repo['name']}\n"
+            result += f"ID: {repo['id']}\n"
+            if repo['defaultBranch']:
+                result += f"Default Branch: {repo['defaultBranch']}\n"
+            if repo['size']:
+                size_mb = repo['size'] / (1024 * 1024)
+                result += f"Size: {size_mb:.1f} MB\n"
+            if repo['remoteUrl']:
+                result += f"Remote URL: {repo['remoteUrl']}\n"
+            if repo['sshUrl']:
+                result += f"SSH URL: {repo['sshUrl']}\n"
+            if repo['webUrl']:
+                result += f"Web URL: {repo['webUrl']}\n"
+            result += f"Status: {'Disabled' if repo['isDisabled'] else 'Active'}\n"
+            if repo['isFork']:
+                result += "Type: Fork\n"
+            result += "-" * 60 + "\n"
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error getting Git repositories: {e}")
+        return f"Error getting Git repositories: {str(e)}"
+
+def get_git_repository_tool(repository_id: str, project: Optional[str] = None) -> str:
+    """
+    Get detailed information about a specific Git repository.
+    
+    This tool retrieves comprehensive details about a specific Git repository,
+    including metadata, branch information, and repository statistics.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Detailed information about the specified repository.
+    
+    Example:
+        get_git_repository_tool("my-app")
+    Output:
+        "Repository: my-app
+         ID: abc123-def456-ghi789
+         Default Branch: refs/heads/main
+         Size: 15.2 MB
+         Remote URL: https://dev.azure.com/myorg/myproject/_git/my-app
+         Status: Active"
+    """
+    try:
+        repository = devops.get_git_repository(repository_id, project=project)
+        
+        if not repository:
+            return f"Repository '{repository_id}' not found."
+        
+        result = f"Repository: {repository['name']}\n"
+        result += f"ID: {repository['id']}\n"
+        if repository['defaultBranch']:
+            result += f"Default Branch: {repository['defaultBranch']}\n"
+        if repository['size']:
+            size_mb = repository['size'] / (1024 * 1024)
+            result += f"Size: {size_mb:.1f} MB\n"
+        if repository['remoteUrl']:
+            result += f"Remote URL: {repository['remoteUrl']}\n"
+        if repository['sshUrl']:
+            result += f"SSH URL: {repository['sshUrl']}\n"
+        if repository['webUrl']:
+            result += f"Web URL: {repository['webUrl']}\n"
+        result += f"Status: {'Disabled' if repository['isDisabled'] else 'Active'}\n"
+        if repository['isFork']:
+            result += "Type: Fork\n"
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error getting Git repository {repository_id}: {e}")
+        return f"Error getting Git repository {repository_id}: {str(e)}"
+
+def get_git_commits_tool(repository_id: str, branch: Optional[str] = None, 
+                        top: int = 10, project: Optional[str] = None) -> str:
+    """
+    Get recent Git commits from a repository.
+    
+    This tool retrieves recent commits from a Git repository, showing commit messages,
+    authors, dates, and change statistics. Useful for understanding recent development activity.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        branch (str, optional): The branch name. If not provided, uses default branch.
+        top (int): Maximum number of commits to retrieve (default: 10).
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: A formatted list of recent commits with details.
+    
+    Example:
+        get_git_commits_tool("my-app", "main", 5)
+    Output:
+        "Found 5 commits from repository my-app:
+        
+        Commit: abc123def456 (2023-10-01T12:00:00Z)
+        Author: John Doe <john@example.com>
+        Message: Fix bug in authentication module
+        Changes: +15 -3 (18 total)
+        URL: https://dev.azure.com/...
+        ------------------------------------------------------------"
+    """
+    try:
+        commits = devops.get_git_commits(repository_id, branch=branch, top=top, project=project)
+        
+        # Check if we got an error response
+        if commits and len(commits) == 1 and isinstance(commits[0], dict) and commits[0].get('error'):
+            error_info = commits[0]
+            return f"Error retrieving commits from repository '{repository_id}': {error_info['error_message']}\n\nDetails: {error_info['error_details']}"
+        
+        if not commits:
+            return f"No commits found in repository '{repository_id}'" + (f" on branch '{branch}'" if branch else "")
+        
+        result = f"Found {len(commits)} commits from repository {repository_id}"
+        if branch:
+            result += f" on branch '{branch}'"
+        result += ":\n\n"
+        
+        for commit in commits:
+            result += f"Commit: {commit['commitId']}"
+            if commit['author'] and commit['author']['date']:
+                result += f" ({commit['author']['date']})"
+            result += "\n"
+            
+            if commit['author']:
+                result += f"Author: {commit['author']['name']}"
+                if commit['author']['email']:
+                    result += f" <{commit['author']['email']}>"
+                result += "\n"
+            
+            if commit['comment']:
+                # Truncate long commit messages
+                comment = commit['comment']
+                if len(comment) > 100:
+                    comment = comment[:97] + "..."
+                result += f"Message: {comment}\n"
+            
+            if commit['changeCounts']:
+                changes = commit['changeCounts']
+                adds = changes.get('Add', 0)
+                edits = changes.get('Edit', 0) 
+                deletes = changes.get('Delete', 0)
+                total = adds + edits + deletes
+                result += f"Changes: +{adds} ~{edits} -{deletes} ({total} total)\n"
+            
+            if commit['url']:
+                result += f"URL: {commit['url']}\n"
+            
+            result += "-" * 60 + "\n"
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error getting Git commits from {repository_id}: {e}")
+        return f"Error getting Git commits from {repository_id}: {str(e)}"
+
+def get_git_commit_details_tool(repository_id: str, commit_id: str, 
+                               project: Optional[str] = None) -> str:
+    """
+    Get detailed information about a specific Git commit.
+    
+    This tool retrieves comprehensive details about a specific commit, including
+    the full commit message, author information, file changes, and modifications.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        commit_id (str): The commit SHA (can be abbreviated).
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Detailed information about the specified commit.
+    
+    Example:
+        get_git_commit_details_tool("my-app", "abc123def456")
+    Output:
+        "Commit: abc123def456789...
+         Author: John Doe <john@example.com> (2023-10-01T12:00:00Z)
+         Committer: John Doe <john@example.com> (2023-10-01T12:00:00Z)
+         
+         Message:
+         Fix bug in authentication module
+         
+         This commit addresses the issue where users were unable to
+         authenticate when using special characters in passwords.
+         
+         Changes:
+         - src/auth/login.py (Edit)
+         - tests/test_auth.py (Edit)
+         - README.md (Edit)"
+    """
+    try:
+        commit_details = devops.get_git_commit_details(repository_id, commit_id, project=project)
+        
+        if not commit_details:
+            return f"Commit '{commit_id}' not found in repository '{repository_id}'"
+        
+        result = f"Commit: {commit_details['commitId']}\n"
+        
+        if commit_details['author']:
+            author = commit_details['author']
+            result += f"Author: {author['name']}"
+            if author['email']:
+                result += f" <{author['email']}>"
+            if author['date']:
+                result += f" ({author['date']})"
+            result += "\n"
+        
+        if commit_details['committer']:
+            committer = commit_details['committer']
+            result += f"Committer: {committer['name']}"
+            if committer['email']:
+                result += f" <{committer['email']}>"
+            if committer['date']:
+                result += f" ({committer['date']})"
+            result += "\n"
+        
+        if commit_details['comment']:
+            result += f"\nMessage:\n{commit_details['comment']}\n"
+        
+        if commit_details['changes']:
+            result += "\nChanges:\n"
+            for change in commit_details['changes']:
+                if change['item'] and change['item']['path']:
+                    result += f"- {change['item']['path']} ({change['changeType']})\n"
+        
+        if commit_details['changeCounts']:
+            changes = commit_details['changeCounts']
+            adds = changes.get('Add', 0)
+            edits = changes.get('Edit', 0)
+            deletes = changes.get('Delete', 0)
+            total = adds + edits + deletes
+            result += f"\nSummary: +{adds} ~{edits} -{deletes} ({total} total changes)\n"
+        
+        if commit_details['url']:
+            result += f"\nURL: {commit_details['url']}\n"
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error getting Git commit details for {commit_id}: {e}")
+        return f"Error getting Git commit details for {commit_id}: {str(e)}"
+
+# Pull Request Tools
+def get_pull_requests_tool(repository_id: str, status: str = 'active',
+                          target_branch: Optional[str] = None, source_branch: Optional[str] = None,
+                          top: int = 20, project: Optional[str] = None) -> str:
+    """
+    Get pull requests from a Git repository with filtering options.
+    
+    This tool retrieves pull requests from a repository with various filtering options.
+    Shows PR status, authors, reviewers, and approval states for code review workflows.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        status (str): PR status filter ('active', 'completed', 'abandoned', 'all'). Default: 'active'.
+        target_branch (str, optional): Filter by target branch name.
+        source_branch (str, optional): Filter by source branch name.
+        top (int): Maximum number of PRs to retrieve (default: 20).
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: A formatted list of pull requests with status and reviewer information.
+    
+    Example:
+        get_pull_requests_tool("my-app", "active", "main")
+    Output:
+        "Found 3 active pull requests in repository my-app:
+        
+        PR #123: Fix authentication bug
+        Status: Active (Draft)
+        Created by: John Doe on 2023-10-01T12:00:00Z
+        Source: feature/auth-fix → Target: main
+        Reviewers: 
+        - Jane Smith (Approved)
+        - Bob Wilson (Waiting for Author)
+        URL: https://dev.azure.com/...
+        ------------------------------------------------------------"
+    """
+    try:
+        pull_requests = devops.get_pull_requests(
+            repository_id=repository_id,
+            status=status,
+            target_branch=target_branch,
+            source_branch=source_branch,
+            top=top,
+            project=project
+        )
+        
+        if not pull_requests:
+            filter_desc = f"{status} pull requests"
+            if target_branch:
+                filter_desc += f" targeting '{target_branch}'"
+            if source_branch:
+                filter_desc += f" from '{source_branch}'"
+            return f"No {filter_desc} found in repository '{repository_id}'"
+        
+        status_desc = status if status != 'all' else 'pull requests'
+        result = f"Found {len(pull_requests)} {status_desc} in repository {repository_id}:\n\n"
+        
+        for pr in pull_requests:
+            result += f"PR #{pr['pullRequestId']}: {pr['title']}\n"
+            result += f"Status: {pr['status'].title()}"
+            if pr['isDraft']:
+                result += " (Draft)"
+            result += "\n"
+            
+            if pr['createdBy']:
+                result += f"Created by: {pr['createdBy']['displayName']}"
+                if pr['creationDate']:
+                    result += f" on {pr['creationDate']}"
+                result += "\n"
+            
+            # Format branch names (remove refs/heads/ prefix)
+            source_branch = pr['sourceRefName'].replace('refs/heads/', '') if pr['sourceRefName'] else 'unknown'
+            target_branch = pr['targetRefName'].replace('refs/heads/', '') if pr['targetRefName'] else 'unknown'
+            result += f"{source_branch} → {target_branch}\n"
+            
+            if pr['reviewers']:
+                result += "Reviewers:\n"
+                for reviewer in pr['reviewers']:
+                    vote_desc = {
+                        -10: "Rejected",
+                        -5: "Waiting for Author",
+                        0: "No Vote",
+                        5: "Approved with Suggestions", 
+                        10: "Approved"
+                    }.get(reviewer['vote'], "Unknown")
+                    
+                    result += f"- {reviewer['displayName']} ({vote_desc})"
+                    if reviewer['isRequired']:
+                        result += " [Required]"
+                    result += "\n"
+            
+            if pr['url']:
+                result += f"URL: {pr['url']}\n"
+            
+            result += "-" * 60 + "\n"
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error getting pull requests from {repository_id}: {e}")
+        return f"Error getting pull requests from {repository_id}: {str(e)}"
+
+def get_pull_request_details_tool(repository_id: str, pull_request_id: int, 
+                                 project: Optional[str] = None) -> str:
+    """
+    Get comprehensive details about a specific pull request.
+    
+    This tool retrieves detailed information about a pull request, including
+    description, reviewers, policies, linked work items, and approval status.
+    Essential for code review and approval workflows.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        pull_request_id (int): The pull request ID number.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Comprehensive details about the pull request.
+    
+    Example:
+        get_pull_request_details_tool("my-app", 123)
+    Output:
+        "Pull Request #123: Fix authentication bug
+         Status: Active
+         Created by: John Doe on 2023-10-01T12:00:00Z
+         Source: feature/auth-fix → Target: main
+         
+         Description:
+         This PR fixes the authentication issue where users with special
+         characters in passwords couldn't log in.
+         
+         Reviewers:
+         - Jane Smith: Approved [Required]
+         - Bob Wilson: Waiting for Author
+         
+         Linked Work Items:
+         - #456: Fix login bug
+         
+         Merge Status: Succeeded"
+    """
+    try:
+        pr_details = devops.get_pull_request_details(repository_id, pull_request_id, project=project)
+        
+        if not pr_details:
+            return f"Pull request #{pull_request_id} not found in repository '{repository_id}'"
+        
+        result = f"Pull Request #{pr_details['pullRequestId']}: {pr_details['title']}\n"
+        result += f"Status: {pr_details['status'].title()}"
+        if pr_details['isDraft']:
+            result += " (Draft)"
+        result += "\n"
+        
+        if pr_details['createdBy']:
+            result += f"Created by: {pr_details['createdBy']['displayName']}"
+            if pr_details['creationDate']:
+                result += f" on {pr_details['creationDate']}"
+            result += "\n"
+        
+        if pr_details.get('closedBy') and pr_details.get('closedDate'):
+            result += f"Closed by: {pr_details['closedBy']['displayName']} on {pr_details['closedDate']}\n"
+        
+        # Format branch names
+        source_branch = pr_details['sourceRefName'].replace('refs/heads/', '') if pr_details['sourceRefName'] else 'unknown'
+        target_branch = pr_details['targetRefName'].replace('refs/heads/', '') if pr_details['targetRefName'] else 'unknown'
+        result += f"{source_branch} → {target_branch}\n"
+        
+        if pr_details['description']:
+            result += f"\nDescription:\n{pr_details['description']}\n"
+        
+        if pr_details['reviewers']:
+            result += "\nReviewers:\n"
+            for reviewer in pr_details['reviewers']:
+                vote_desc = {
+                    -10: "Rejected",
+                    -5: "Waiting for Author",
+                    0: "No Vote", 
+                    5: "Approved with Suggestions",
+                    10: "Approved"
+                }.get(reviewer['vote'], "Unknown")
+                
+                result += f"- {reviewer['displayName']}: {vote_desc}"
+                if reviewer['isRequired']:
+                    result += " [Required]"
+                if reviewer['isFlagged']:
+                    result += " [Flagged]"
+                result += "\n"
+        
+        if pr_details['workItemRefs']:
+            result += "\nLinked Work Items:\n"
+            for wi in pr_details['workItemRefs']:
+                result += f"- #{wi['id']}\n"
+        
+        if pr_details['labels']:
+            result += f"\nLabels: {', '.join(pr_details['labels'])}\n"
+        
+        if pr_details['mergeStatus']:
+            result += f"\nMerge Status: {pr_details['mergeStatus']}\n"
+        
+        if pr_details['url']:
+            result += f"\nURL: {pr_details['url']}\n"
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error getting pull request details for PR {pull_request_id}: {e}")
+        return f"Error getting pull request details for PR {pull_request_id}: {str(e)}"
+
+def create_pull_request_tool(repository_id: str, title: str, description: str,
+                            source_branch: str, target_branch: str,
+                            reviewers: Optional[List[str]] = None, is_draft: bool = False,
+                            project: Optional[str] = None) -> str:
+    """
+    Create a new pull request in a Git repository.
+    
+    This tool creates a new pull request with the specified details, reviewers,
+    and options. Essential for initiating code review and collaboration workflows.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        title (str): The pull request title.
+        description (str): The pull request description.
+        source_branch (str): The source branch name (without refs/heads/).
+        target_branch (str): The target branch name (without refs/heads/).
+        reviewers (List[str], optional): List of reviewer IDs, emails, or display names.
+        is_draft (bool): Whether to create as a draft PR (default: False).
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Information about the created pull request.
+    
+    Example:
+        create_pull_request_tool("my-app", "Fix authentication bug", "This PR fixes...", "feature/auth-fix", "main", ["john@example.com"], False)
+    Output:
+        "Pull request created successfully:
+         PR #124: Fix authentication bug
+         Status: Active
+         Created by: Current User on 2023-10-01T12:00:00Z
+         Source: feature/auth-fix → Target: main
+         URL: https://dev.azure.com/..."
+    """
+    try:
+        result = devops.create_pull_request(
+            repository_id=repository_id,
+            title=title,
+            description=description,
+            source_branch=source_branch,
+            target_branch=target_branch,
+            reviewers=reviewers,
+            is_draft=is_draft,
+            project=project
+        )
+        
+        if 'error' in result:
+            return f"Error creating pull request: {result['error']}"
+        
+        response = "Pull request created successfully:\n"
+        response += f"PR #{result['pullRequestId']}: {result['title']}\n"
+        response += f"Status: {result['status'].title()}"
+        if result['isDraft']:
+            response += " (Draft)"
+        response += "\n"
+        
+        if result['createdBy']:
+            response += f"Created by: {result['createdBy']['displayName']}"
+            if result['creationDate']:
+                response += f" on {result['creationDate']}"
+            response += "\n"
+        
+        # Format branch names
+        source = result['sourceRefName'].replace('refs/heads/', '') if result['sourceRefName'] else source_branch
+        target = result['targetRefName'].replace('refs/heads/', '') if result['targetRefName'] else target_branch
+        response += f"{source} → {target}\n"
+        
+        if result['url']:
+            response += f"URL: {result['url']}\n"
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error creating pull request: {e}")
+        return f"Error creating pull request: {str(e)}"
+
+def approve_pull_request_tool(repository_id: str, pull_request_id: int, 
+                             reviewer_id: str, project: Optional[str] = None) -> str:
+    """
+    Approve a pull request by casting an approval vote.
+    
+    This tool allows a reviewer to approve a pull request by casting a vote of 10 (Approved).
+    Essential for pull request approval workflows and automated code reviews.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        pull_request_id (int): The pull request ID number.
+        reviewer_id (str): The reviewer's ID, email, or unique name.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Confirmation of the approval vote.
+    
+    Example:
+        approve_pull_request_tool("my-app", 123, "john@example.com")
+    Output:
+        "Pull request approval successful:
+         Reviewer: John Doe
+         Vote: Approved (10)
+         PR #123 in repository my-app"
+    """
+    try:
+        result = devops.update_pull_request_vote(
+            repository_id=repository_id,
+            pull_request_id=pull_request_id,
+            reviewer_id=reviewer_id,
+            vote=10,
+            project=project
+        )
+        
+        if 'error' in result:
+            return f"Error approving pull request: {result['error']}"
+        
+        response = "Pull request approval successful:\n"
+        response += f"Reviewer: {result['displayName']}\n"
+        response += f"Vote: {result['voteDescription']} ({result['vote']})\n"
+        response += f"PR #{pull_request_id} in repository {repository_id}\n"
+        
+        if result['isRequired']:
+            response += "This was a required reviewer.\n"
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error approving pull request: {e}")
+        return f"Error approving pull request: {str(e)}"
+
+def reject_pull_request_tool(repository_id: str, pull_request_id: int,
+                            reviewer_id: str, project: Optional[str] = None) -> str:
+    """
+    Reject a pull request by casting a rejection vote.
+    
+    This tool allows a reviewer to reject a pull request by casting a vote of -10 (Rejected).
+    Used when changes are required before the PR can be approved.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        pull_request_id (int): The pull request ID number.
+        reviewer_id (str): The reviewer's ID, email, or unique name.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Confirmation of the rejection vote.
+    
+    Example:
+        reject_pull_request_tool("my-app", 123, "john@example.com")
+    Output:
+        "Pull request rejection recorded:
+         Reviewer: John Doe
+         Vote: Rejected (-10)
+         PR #123 in repository my-app"
+    """
+    try:
+        result = devops.update_pull_request_vote(
+            repository_id=repository_id,
+            pull_request_id=pull_request_id,
+            reviewer_id=reviewer_id,
+            vote=-10,
+            project=project
+        )
+        
+        if 'error' in result:
+            return f"Error rejecting pull request: {result['error']}"
+        
+        response = "Pull request rejection recorded:\n"
+        response += f"Reviewer: {result['displayName']}\n"
+        response += f"Vote: {result['voteDescription']} ({result['vote']})\n"
+        response += f"PR #123 in repository {repository_id}\n"
+        
+        if result['isRequired']:
+            response += "This was a required reviewer.\n"
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error rejecting pull request: {e}")
+        return f"Error rejecting pull request: {str(e)}"
+
+def request_pull_request_changes_tool(repository_id: str, pull_request_id: int,
+                                     reviewer_id: str, project: Optional[str] = None) -> str:
+    """
+    Request changes on a pull request by casting a 'waiting for author' vote.
+    
+    This tool allows a reviewer to request changes on a pull request by casting
+    a vote of -5 (Waiting for Author). Used when minor changes are needed.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        pull_request_id (int): The pull request ID number.
+        reviewer_id (str): The reviewer's ID, email, or unique name.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Confirmation of the change request vote.
+    
+    Example:
+        request_pull_request_changes_tool("my-app", 123, "john@example.com")
+    Output:
+        "Pull request change request recorded:
+         Reviewer: John Doe
+         Vote: Waiting for Author (-5)
+         PR #123 in repository my-app"
+    """
+    try:
+        result = devops.update_pull_request_vote(
+            repository_id=repository_id,
+            pull_request_id=pull_request_id,
+            reviewer_id=reviewer_id,
+            vote=-5,
+            project=project
+        )
+        
+        if 'error' in result:
+            return f"Error requesting changes on pull request: {result['error']}"
+        
+        response = "Pull request change request recorded:\n"
+        response += f"Reviewer: {result['displayName']}\n"
+        response += f"Vote: {result['voteDescription']} ({result['vote']})\n"
+        response += f"PR #123 in repository {repository_id}\n"
+        
+        if result['isRequired']:
+            response += "This was a required reviewer.\n"
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error requesting changes on pull request: {e}")
+        return f"Error requesting changes on pull request: {str(e)}"
+
+def get_pull_request_policies_tool(repository_id: str, pull_request_id: int,
+                                  project: Optional[str] = None) -> str:
+    """
+    Get branch policies and their status for a pull request.
+    
+    This tool retrieves information about branch policies that apply to a pull request,
+    including their evaluation status. Essential for understanding approval requirements
+    and compliance checks.
+    
+    Parameters:
+        repository_id (str): The repository ID or name.
+        pull_request_id (int): The pull request ID number.
+        project (str, optional): The Azure DevOps project name. If not provided, uses the default project.
+    
+    Returns:
+        str: Information about branch policies and their evaluation status.
+    
+    Example:
+        get_pull_request_policies_tool("my-app", 123)
+    Output:
+        "Branch policies for PR #123:
+        
+        Policy: Minimum number of reviewers
+        Status: Approved
+        Started: 2023-10-01T12:00:00Z
+        Completed: 2023-10-01T12:30:00Z
+        
+        Policy: Build validation
+        Status: Running
+        Started: 2023-10-01T12:00:00Z"
+    """
+    try:
+        policies = devops.get_pull_request_policies(repository_id, pull_request_id, project=project)
+        
+        if not policies:
+            return f"No branch policies found for PR #{pull_request_id} in repository '{repository_id}'"
+        
+        result = f"Branch policies for PR #{pull_request_id}:\n\n"
+        
+        for policy in policies:
+            # Extract policy name from configuration if available
+            policy_name = "Unknown Policy"
+            if policy.get('configuration') and isinstance(policy['configuration'], dict):
+                config = policy['configuration']
+                if 'displayName' in config:
+                    policy_name = config['displayName']
+                elif 'type' in config:
+                    policy_name = config['type']['displayName'] if isinstance(config['type'], dict) else str(config['type'])
+            
+            result += f"Policy: {policy_name}\n"
+            result += f"Status: {policy['status']}\n"
+            result += f"Evaluation ID: {policy['evaluationId']}\n"
+            
+            if policy['startedDate']:
+                result += f"Started: {policy['startedDate']}\n"
+            if policy['completedDate']:
+                result += f"Completed: {policy['completedDate']}\n"
+            
+            result += "\n"
+        
+        return result.rstrip()
+        
+    except Exception as e:
+        logging.error(f"Error getting policies for PR {pull_request_id}: {e}")
+        return f"Error getting policies for PR {pull_request_id}: {str(e)}"
+
+
 # Export all tools for easy MCP integration
 __all__ = [
     # Core tool functions
@@ -477,4 +1316,18 @@ __all__ = [
     "get_build_log_full_content_tool",
     "get_failed_tasks_with_logs_tool",
     "get_build_pipelines_tool",
+    # Git repository tools
+    "get_git_repositories_tool",
+    "get_git_repository_tool",
+    "get_git_commits_tool",
+    "get_git_commit_details_tool",
+    # Pull request tools
+    "get_pull_requests_tool",
+    "get_pull_request_details_tool",
+    "create_pull_request_tool",
+    "approve_pull_request_tool",
+    "reject_pull_request_tool",
+    "request_pull_request_changes_tool",
+    "get_pull_request_policies_tool",
+    "get_projects_tool",
 ]

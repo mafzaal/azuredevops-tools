@@ -12,7 +12,22 @@ from .tools import (
     get_file_diff_tool, 
     get_changeset_list_tool, 
     get_failed_tasks_with_logs_tool, 
-    get_build_pipelines_tool
+    get_build_pipelines_tool,
+    # Project tools
+    get_projects_tool,
+    # Git repository tools
+    get_git_repositories_tool,
+    get_git_repository_tool,
+    get_git_commits_tool,
+    get_git_commit_details_tool,
+    # Pull request tools
+    get_pull_requests_tool,
+    get_pull_request_details_tool,
+    create_pull_request_tool,
+    approve_pull_request_tool,
+    reject_pull_request_tool,
+    request_pull_request_changes_tool,
+    get_pull_request_policies_tool
 )
 from mcp.server.fastmcp import FastMCP
 
@@ -20,7 +35,9 @@ from mcp.server.fastmcp import FastMCP
 def create_mcp_server():
     """Create and configure the MCP server with all available tools."""
     # Initialize FastMCP server
-    mcp = FastMCP("devops_tools", description="DevOps Tools for Azure DevOps", version="0.1.0")
+    mcp = FastMCP("devops_tools")
+    setattr(mcp, "description", "Azure DevOps tools for MCP integration.")
+    setattr(mcp, "version", "1.0.0")
     
     # Add changeset tools
     mcp.add_tool(get_changeset_tool)
@@ -35,6 +52,26 @@ def create_mcp_server():
     mcp.add_tool(get_build_log_full_content_tool)
     mcp.add_tool(get_failed_tasks_with_logs_tool)
     mcp.add_tool(get_build_pipelines_tool)
+    
+    # Add project tools
+    mcp.add_tool(get_projects_tool)
+    
+    # Add Git repository tools
+    mcp.add_tool(get_git_repositories_tool)
+    mcp.add_tool(get_git_repository_tool)
+    mcp.add_tool(get_git_commits_tool)
+    mcp.add_tool(get_git_commit_details_tool)
+    
+    # Add pull request tools
+    mcp.add_tool(get_pull_requests_tool)
+    mcp.add_tool(get_pull_request_details_tool)
+    mcp.add_tool(create_pull_request_tool)
+    mcp.add_tool(get_pull_request_policies_tool)
+    
+    # Add approval workflow tools
+    mcp.add_tool(approve_pull_request_tool)
+    mcp.add_tool(reject_pull_request_tool)
+    mcp.add_tool(request_pull_request_changes_tool)
     
     return mcp
 

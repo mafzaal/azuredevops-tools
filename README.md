@@ -10,10 +10,15 @@ A comprehensive collection of Azure DevOps tools designed for seamless integrati
 - **🔨 Build Tools**: Monitor builds, analyze results, and retrieve logs  
 - **⚙️ Pipeline Tools**: Manage CI/CD pipelines and definitions
 - **🔧 Diagnostic Tools**: Debug failed builds and troubleshoot issues
+- **📦 Git Repository Tools**: Discover and manage Git repositories
+- **🔀 Pull Request Tools**: Create, review, and manage pull requests
+- **✅ Approval Workflow Tools**: Handle code review and approval processes
 
 ### Available Tools
 
 All tools support an optional `project` parameter to target specific Azure DevOps projects.
+
+#### Core Azure DevOps Tools
 
 | Tool Name | Category | Description | Use Cases |
 |-----------|----------|-------------|-----------|
@@ -27,6 +32,33 @@ All tools support an optional `project` parameter to target specific Azure DevOp
 | `get_build_log_full_content_tool` | build | Get complete build log content | Detailed analysis, thorough debugging |
 | `get_failed_tasks_with_logs_tool` | diagnostic | Get failed tasks with recent logs | Build failure analysis, troubleshooting |
 | `get_build_pipelines_tool` | pipeline | Get all available pipelines | Pipeline discovery, management |
+| `get_projects_tool` | project | Get all projects in the organization | Project discovery, management |
+
+#### Git Repository Tools
+
+| Tool Name | Category | Description | Use Cases |
+|-----------|----------|-------------|-----------|
+| `get_git_repositories_tool` | git | Get all Git repositories in project | Repository discovery, inventory |
+| `get_git_repository_tool` | git | Get detailed repository information | Repository analysis, metadata |
+| `get_git_commits_tool` | git | Get recent commits with details | Commit history, developer activity |
+| `get_git_commit_details_tool` | git | Get comprehensive commit information | Code review, change analysis |
+
+#### Pull Request Tools
+
+| Tool Name | Category | Description | Use Cases |
+|-----------|----------|-------------|-----------|
+| `get_pull_requests_tool` | pull-request | Get pull requests with filtering | PR monitoring, review queue |
+| `get_pull_request_details_tool` | pull-request | Get comprehensive PR information | Code review, approval status |
+| `create_pull_request_tool` | pull-request | Create new pull request | Automated PR creation, workflows |
+| `get_pull_request_policies_tool` | pull-request | Get branch policies and compliance | Policy compliance, requirements |
+
+#### Approval Workflow Tools
+
+| Tool Name | Category | Description | Use Cases |
+|-----------|----------|-------------|-----------|
+| `approve_pull_request_tool` | approval | Approve a pull request | Automated approvals, workflows |
+| `reject_pull_request_tool` | approval | Reject a pull request | Quality gates, review process |
+| `request_pull_request_changes_tool` | approval | Request changes on PR | Code review, feedback process |
 
 ## 📦 Installation
 
@@ -133,47 +165,27 @@ build_info = get_build_tool(67890)
 print(build_info)
 ```
 
-### MCP Server
-
-Start the MCP server to expose tools for LLM integration:
-
-```bash
-python mcp_server.py
-```
-
-The server provides a JSON-RPC interface over STDIO for MCP clients.
-
-### Tool Discovery
-
-```python
-from tools import get_available_tools, get_tools_by_category
-
-# Get all available tools
-all_tools = get_available_tools()
-print(f"Total tools: {all_tools['total_tools']}")
-
-# Get tools by category
-build_tools = get_tools_by_category("build")
-print(f"Build tools: {build_tools['tool_count']}")
-```
-
 ## 🤖 LLM Integration
 
 ### MCP Configuration
 
-The `mcp-config.json` file provides tool schema for MCP clients:
+The `mcp.json` file provides configuration with clients:
 
 ```json
 {
-  "mcpVersion": "2024-11-05",
-  "name": "azuredevops-tools",
-  "description": "Azure DevOps Tools for LLM/MCP Integration",
-  "tools": {
-    "get_changeset_tool": {
-      "description": "Get a specific changeset and summarize its details",
-      "inputSchema": { ... }
+    "servers": {
+        "azuredevops-tools": {
+            "type": "stdio",
+            "command": "uvx",
+            "args": [
+                "--directory",
+                "${workspaceFolder}",
+                "azuredevops-tools"
+                
+            ],
+            "envFile": "${workspaceFolder}/.env",
+        }
     }
-  }
 }
 ```
 
@@ -238,6 +250,124 @@ pipeline_builds = get_builds_tool(definition_id=139, top=5)
 
 # Monitor pipeline builds from specific project
 pipeline_builds = get_builds_tool(definition_id=139, top=5, project="TargetProject")
+```
+
+### Git Repository and Pull Request Tools
+
+The Git tools provide comprehensive support for Git repositories, commits, and pull request workflows:
+
+#### Repository Discovery and Analysis
+
+```python
+from azuredevops_tools.tools import (
+    get_git_repositories_tool,
+    get_git_repository_tool,
+    get_git_commits_tool,
+    get_git_commit_details_tool
+)
+
+# Discover all Git repositories in the project
+repositories = get_git_repositories_tool()
+print(repositories)
+
+# Get detailed information about a specific repository
+repo_details = get_git_repository_tool("my-app")
+print(repo_details)
+
+# Get recent commits from main branch
+commits = get_git_commits_tool("my-app", "main", top=10)
+print(commits)
+
+# Get detailed information about a specific commit
+commit_details = get_git_commit_details_tool("my-app", "abc123def456")
+print(commit_details)
+```
+
+#### Pull Request Management
+
+```python
+from azuredevops_tools.tools import (
+    get_pull_requests_tool,
+    get_pull_request_details_tool,
+    create_pull_request_tool,
+    get_pull_request_policies_tool
+)
+
+# Get active pull requests
+active_prs = get_pull_requests_tool("my-app", status="active")
+print(active_prs)
+
+# Get pull requests targeting main branch
+main_prs = get_pull_requests_tool("my-app", target_branch="main")
+print(main_prs)
+
+# Get detailed information about a specific PR
+pr_details = get_pull_request_details_tool("my-app", 123)
+print(pr_details)
+
+# Create a new pull request
+new_pr = create_pull_request_tool(
+    repository_id="my-app",
+    title="Fix authentication bug",
+    description="This PR fixes the authentication issue...",
+    source_branch="feature/auth-fix",
+    target_branch="main",
+    reviewers=["reviewer1@company.com", "reviewer2@company.com"]
+)
+print(new_pr)
+
+# Check branch policies for a PR
+policies = get_pull_request_policies_tool("my-app", 123)
+print(policies)
+```
+
+#### Code Review and Approval Workflows
+
+```python
+from azuredevops_tools.tools import (
+    approve_pull_request_tool,
+    reject_pull_request_tool,
+    request_pull_request_changes_tool
+)
+
+# Approve a pull request
+approval = approve_pull_request_tool("my-app", 123, "reviewer@company.com")
+print(approval)
+
+# Request changes on a pull request
+changes = request_pull_request_changes_tool("my-app", 123, "reviewer@company.com")
+print(changes)
+
+# Reject a pull request
+rejection = reject_pull_request_tool("my-app", 123, "reviewer@company.com")
+print(rejection)
+```
+
+#### Complete Workflow Example
+
+```python
+# 1. Repository Analysis
+repos = get_git_repositories_tool()
+print(f"Found {len(repos)} repositories")
+
+# 2. Commit History Analysis
+for repo in repos:
+    commits = get_git_commits_tool(repo['name'], top=5)
+    print(f"Recent commits in {repo['name']}: {len(commits)}")
+
+# 3. Pull Request Review
+active_prs = get_pull_requests_tool("my-app", "active")
+for pr in active_prs:
+    pr_details = get_pull_request_details_tool("my-app", pr['pullRequestId'])
+    policies = get_pull_request_policies_tool("my-app", pr['pullRequestId'])
+    
+    print(f"PR #{pr['pullRequestId']}: {pr['title']}")
+    print(f"Reviewers: {len(pr_details['reviewers'])}")
+    print(f"Policies: {len(policies)}")
+
+# 4. Automated Approval (if conditions met)
+if all_conditions_met:
+    approval = approve_pull_request_tool("my-app", pr_id, "auto-reviewer@company.com")
 ```
 
 ## 🔍 Tool Categories
@@ -375,7 +505,7 @@ uv run twine upload dist/*
 
 #### Testing Published Package
 ```bash
-# Test from Test PyPI
+# Test from Test PyPI (when published)
 pip install --index-url https://test.pypi.org/simple/ azuredevops-tools
 
 # Test from PyPI
@@ -400,18 +530,7 @@ def your_new_tool(param: int) -> str:
     pass
 ```
 
-2. Add to tool registry:
-```python
-TOOL_REGISTRY["your_new_tool"] = {
-    "category": "appropriate_category",
-    "description": "Clear tool description",
-    "parameters": ["param: int"],
-    "returns": "Return description",
-    "use_cases": ["use case 1", "use case 2"]
-}
-```
-
-3. Update MCP configuration and exports
+2. Update MCP configuration and exports
 
 ### Testing
 
