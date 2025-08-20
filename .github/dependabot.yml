@@ -9,8 +9,6 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 10
     target-branch: "develop"
-    reviewers:
-      - "mafzaal"
     assignees:
       - "mafzaal"
     commit-message:
@@ -29,8 +27,6 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     target-branch: "develop"
-    reviewers:
-      - "mafzaal"
     assignees:
       - "mafzaal"
     commit-message:
