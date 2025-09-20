@@ -43,11 +43,7 @@ WORKDIR /app
 #COPY --from=uv /root/.local /home/mcp_user/.local
 COPY --from=uv /app/.venv /app/.venv
 
-# Fix shebang lines in executables to point to correct python path
-RUN find /app/.venv/bin -type f -executable -exec sed -i 's|#!/src/app/.venv/bin/python|#!/app/.venv/bin/python|g' {} \;
-
 # Change ownership of the virtual environment and app to mcp_user
-
 RUN chown -R mcp_user:mcp_user /app/.venv /app 
 
 # Place executables in the environment at the front of the path
