@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "azuredevops-tools"
-version = "0.2.0"
+version = "0.3.0"
 description = "Comprehensive Azure DevOps Tools for Model Context Protocol (MCP) integration including Git repositories, pull requests, builds, changesets, and approval workflows"
 readme = "README.md"
 requires-python = ">=3.11"
