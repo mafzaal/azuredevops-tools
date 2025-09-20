@@ -1,14 +1,70 @@
 {
     "servers": {
         "azure-devops-mcp-server": {
+
             "type": "stdio",
-            "command": "uv",
+            /////////////////////////////////////////////////
+            // Use with uv --directory
+            /////////////////////////////////////////////////
+            // "command": "uv",
+            // "args": [
+            //     "--directory",
+            //     "/home/mafzaal/source/azuredevops-tools",
+            //     "run",
+            //     "main.py"
+            // ]
+            // "env": {
+            //     "DEVOPS_ORGANIZATION": "${input:DEVOPS_ORGANIZATION}",
+            //     "DEVOPS_PROJECT": "${input:DEVOPS_PROJECT}",
+            //     "DEVOPS_PAT": "${input:DEVOPS_PAT}"
+            // },
+            /////////////////////////////////////////////////
+            // Use with uvx --directory
+            /////////////////////////////////////////////////
+            // "command": "uvx",
+            // "args": [
+            //     "azuredevops-tools",
+            // ]
+            // "env": {
+            //     "DEVOPS_ORGANIZATION": "${input:DEVOPS_ORGANIZATION}",
+            //     "DEVOPS_PROJECT": "${input:DEVOPS_PROJECT}",
+            //     "DEVOPS_PAT": "${input:DEVOPS_PAT}"
+            // },
+            
+            /////////////////////////////////////////////////
+            // Use with Docker
+            /////////////////////////////////////////////////
+            "command": "docker",
             "args": [
-                "--directory",
-                "/home/mafzaal/source/azuredevops-tools",
                 "run",
-                "main.py"
+                "--rm",
+                "-i",
+                "-e",
+                "DEVOPS_ORGANIZATION=${input:DEVOPS_ORGANIZATION}",
+                "-e",
+                "DEVOPS_PROJECT=${input:DEVOPS_PROJECT}",
+                "-e",
+                "DEVOPS_PAT=${input:DEVOPS_PAT}",
+                "azuredevops-tools:latest"
             ]
         }
-    }
+    },
+    "inputs": [
+        {
+            "id": "DEVOPS_ORGANIZATION",
+            "type": "promptString",
+            "description": "Azure DevOps organization name",
+        },
+        {
+            "id": "DEVOPS_PROJECT",
+            "type": "promptString",
+            "description": "Azure DevOps project name",
+        },
+        {
+            "id": "DEVOPS_PAT",
+            "type": "promptString",
+            "description": "Azure DevOps Personal Access Token (PAT)",
+            "password": true
+        }
+    ]
 }
