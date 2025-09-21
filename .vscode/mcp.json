@@ -19,7 +19,7 @@
             //     "DEVOPS_PAT": "${input:DEVOPS_PAT}"
             // },
             /////////////////////////////////////////////////
-            // Use with uvx --directory
+            // Use with uvx python package
             /////////////////////////////////////////////////
             // "command": "uvx",
             // "args": [

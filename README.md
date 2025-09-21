@@ -1,18 +1,43 @@
 # Azure DevOps Tools for LLM/MCP Integration
 
-A comprehensive collection of Azure DevOps tools designed for seamless integration with Large Language Models (LLMs) through the Model Context Protocol (MCP). These tools enable AI assistants to interact with Azure DevOps for changeset analysis, build monitoring, pipeline management, and diagnostics.
+A comprehensive collection of Azure DevOps tools designed for seamless integration with Large Language Models (LLMs) through the Model Context Protocol (MCP). These tools enable AI assistants to interact with Azure DevOps for changeset analysis, build monitoring, pipeline management, Git repository operations, pull request workflows, and automated code review processes.
+
+## 🚀 Quick Install in VS Code
+
+### Install with uvx (Python Package)
+
+[![Install in VS Code](https://img.shields.io/badge/Install%20in-VS%20Code-blue?style=for-the-badge&logo=visual-studio-code)](https://vscode.dev/redirect/mcp/install?name=azure-devops-mcp-server&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22azuredevops-tools%22%5D%2C%22env%22%3A%7B%22DEVOPS_ORGANIZATION%22%3A%22%24%7Binput%3ADEVOPS_ORGANIZATION%7D%22%2C%22DEVOPS_PROJECT%22%3A%22%24%7Binput%3ADEVOPS_PROJECT%7D%22%2C%22DEVOPS_PAT%22%3A%22%24%7Binput%3ADEVOPS_PAT%7D%22%7D%7D&inputs=%5B%7B%22id%22%3A%22DEVOPS_ORGANIZATION%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20organization%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PROJECT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20project%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PAT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20Personal%20Access%20Token%20(PAT)%22%2C%22password%22%3Atrue%7D%5D)
+
+[![Install in VS Code Insiders](https://img.shields.io/badge/Install%20in-VS%20Code%20Insiders-purple?style=for-the-badge&logo=visual-studio-code)](https://insiders.vscode.dev/redirect/mcp/install?name=azure-devops-mcp-server&quality=insiders&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22azuredevops-tools%22%5D%2C%22env%22%3A%7B%22DEVOPS_ORGANIZATION%22%3A%22%24%7Binput%3ADEVOPS_ORGANIZATION%7D%22%2C%22DEVOPS_PROJECT%22%3A%22%24%7Binput%3ADEVOPS_PROJECT%7D%22%2C%22DEVOPS_PAT%22%3A%22%24%7Binput%3ADEVOPS_PAT%7D%22%7D%7D&inputs=%5B%7B%22id%22%3A%22DEVOPS_ORGANIZATION%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20organization%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PROJECT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20project%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PAT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20Personal%20Access%20Token%20(PAT)%22%2C%22password%22%3Atrue%7D%5D)
+
+### Install with Docker
+
+[![Install in VS Code (Docker)](https://img.shields.io/badge/Install%20in-VS%20Code%20(Docker)-blue?style=for-the-badge&logo=docker)](https://vscode.dev/redirect/mcp/install?name=azure-devops-mcp-server&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22-e%22%2C%22DEVOPS_ORGANIZATION%3D%24%7Binput%3ADEVOPS_ORGANIZATION%7D%22%2C%22-e%22%2C%22DEVOPS_PROJECT%3D%24%7Binput%3ADEVOPS_PROJECT%7D%22%2C%22-e%22%2C%22DEVOPS_PAT%3D%24%7Binput%3ADEVOPS_PAT%7D%22%2C%22ghcr.io%2Fmafzaal%2Fazuredevops-tools%3Alatest%22%5D%7D&inputs=%5B%7B%22id%22%3A%22DEVOPS_ORGANIZATION%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20organization%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PROJECT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20project%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PAT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20Personal%20Access%20Token%20(PAT)%22%2C%22password%22%3Atrue%7D%5D)
+
+[![Install in VS Code Insiders (Docker)](https://img.shields.io/badge/Install%20in-VS%20Code%20Insiders%20(Docker)-purple?style=for-the-badge&logo=docker)](https://insiders.vscode.dev/redirect/mcp/install?name=azure-devops-mcp-server&quality=insiders&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22-e%22%2C%22DEVOPS_ORGANIZATION%3D%24%7Binput%3ADEVOPS_ORGANIZATION%7D%22%2C%22-e%22%2C%22DEVOPS_PROJECT%3D%24%7Binput%3ADEVOPS_PROJECT%7D%22%2C%22-e%22%2C%22DEVOPS_PAT%3D%24%7Binput%3ADEVOPS_PAT%7D%22%2C%22ghcr.io%2Fmafzaal%2Fazuredevops-tools%3Alatest%22%5D%7D&inputs=%5B%7B%22id%22%3A%22DEVOPS_ORGANIZATION%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20organization%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PROJECT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20project%20name%22%7D%2C%7B%22id%22%3A%22DEVOPS_PAT%22%2C%22type%22%3A%22promptString%22%2C%22description%22%3A%22Azure%20DevOps%20Personal%20Access%20Token%20(PAT)%22%2C%22password%22%3Atrue%7D%5D)
 
 ## 🚀 Features
 
 ### Tool Categories
 
-- **🔄 Changeset Tools**: Analyze code changes, file diffs, and modification history
-- **🔨 Build Tools**: Monitor builds, analyze results, and retrieve logs  
-- **⚙️ Pipeline Tools**: Manage CI/CD pipelines and definitions
-- **🔧 Diagnostic Tools**: Debug failed builds and troubleshoot issues
-- **📦 Git Repository Tools**: Discover and manage Git repositories
-- **🔀 Pull Request Tools**: Create, review, and manage pull requests
-- **✅ Approval Workflow Tools**: Handle code review and approval processes
+- **🔄 Changeset Tools**: Analyze TFVC code changes, file diffs, and modification history
+- **🔨 Build Tools**: Monitor builds, analyze results, and retrieve comprehensive logs  
+- **⚙️ Pipeline Tools**: Discover and manage CI/CD pipelines and definitions
+- **🔧 Diagnostic Tools**: Debug failed builds and troubleshoot issues with detailed logs
+- **📦 Git Repository Tools**: Discover, analyze, and manage Git repositories and commits
+- **🔀 Pull Request Tools**: Create, review, and manage pull requests with full workflow support
+- **✅ Approval Workflow Tools**: Handle automated code review and approval processes
+- **🏢 Project Management Tools**: Discover and manage projects across the Azure DevOps organization
+
+### Key Capabilities
+
+- **22 Comprehensive Tools** covering all major Azure DevOps operations
+- **Multi-Project Support** with optional project parameter on all tools
+- **Detailed Error Handling** with meaningful error messages for LLM interpretation
+- **Rich Output Formatting** optimized for LLM consumption and analysis
+- **Cross-Platform Compatibility** supporting both TFVC and Git repositories
+- **Automated Workflows** enabling complex DevOps automation scenarios
+- **MCP-Optimized** with comprehensive tool metadata for optimal LLM discovery
 
 ### Available Tools
 
@@ -22,43 +47,43 @@ All tools support an optional `project` parameter to target specific Azure DevOp
 
 | Tool Name | Category | Description | Use Cases |
 |-----------|----------|-------------|-----------|
-| `get_changeset_tool` | changeset | Get detailed changeset information | Code review, audit trail |
-| `get_file_diff_tool` | changeset | Get file diff within a changeset | Code review, debugging |
-| `get_changeset_changes_tool` | changeset | Get summary of all file changes | Change overview, impact analysis |
-| `get_changeset_list_tool` | changeset | Get multiple changesets with filtering | Recent changes, developer activity |
-| `get_build_tool` | build | Get comprehensive build information | Build monitoring, status checking |
-| `get_builds_tool` | build | Get multiple builds with filtering | Build history, trend analysis |
-| `get_build_logs_tool` | build | Get build logs with preview | Quick log review, initial diagnosis |
-| `get_build_log_full_content_tool` | build | Get complete build log content | Detailed analysis, thorough debugging |
-| `get_failed_tasks_with_logs_tool` | diagnostic | Get failed tasks with recent logs | Build failure analysis, troubleshooting |
-| `get_build_pipelines_tool` | pipeline | Get all available pipelines | Pipeline discovery, management |
-| `get_projects_tool` | project | Get all projects in the organization | Project discovery, management |
+| `get_changeset_tool` | changeset | Get detailed changeset information with ID, comment, author, and date | Code review, audit trail |
+| `get_file_diff_tool` | changeset | Get line-by-line file diff within a changeset | Code review, debugging |
+| `get_changeset_changes_tool` | changeset | Get summary of all file changes (excludes binary files) | Change overview, impact analysis |
+| `get_changeset_list_tool` | changeset | Get multiple changesets with author and ID range filtering | Recent changes, developer activity |
+| `get_build_tool` | build | Get comprehensive build information including status, result, duration | Build monitoring, status checking |
+| `get_builds_tool` | build | Get multiple builds with definition, status, and count filtering | Build history, trend analysis |
+| `get_build_logs_tool` | build | Get build logs with preview content (first 50 lines) | Quick log review, initial diagnosis |
+| `get_build_log_full_content_tool` | build | Get complete untruncated build log content with metadata | Detailed analysis, thorough debugging |
+| `get_failed_tasks_with_logs_tool` | diagnostic | Get failed tasks with last 200 lines of logs for troubleshooting | Build failure analysis, troubleshooting |
+| `get_build_pipelines_tool` | pipeline | Get all available build pipelines with IDs, names, and metadata | Pipeline discovery, management |
+| `get_projects_tool` | project | Get all projects in the organization with descriptions and metadata | Project discovery, management |
 
 #### Git Repository Tools
 
 | Tool Name | Category | Description | Use Cases |
 |-----------|----------|-------------|-----------|
-| `get_git_repositories_tool` | git | Get all Git repositories in project | Repository discovery, inventory |
-| `get_git_repository_tool` | git | Get detailed repository information | Repository analysis, metadata |
-| `get_git_commits_tool` | git | Get recent commits with details | Commit history, developer activity |
-| `get_git_commit_details_tool` | git | Get comprehensive commit information | Code review, change analysis |
+| `get_git_repositories_tool` | git | Get all Git repositories with URLs, branches, and metadata | Repository discovery, inventory |
+| `get_git_repository_tool` | git | Get detailed repository information including size and status | Repository analysis, metadata |
+| `get_git_commits_tool` | git | Get recent commits with messages, authors, and change statistics | Commit history, developer activity |
+| `get_git_commit_details_tool` | git | Get comprehensive commit info with full message and file changes | Code review, change analysis |
 
 #### Pull Request Tools
 
 | Tool Name | Category | Description | Use Cases |
 |-----------|----------|-------------|-----------|
-| `get_pull_requests_tool` | pull-request | Get pull requests with filtering | PR monitoring, review queue |
-| `get_pull_request_details_tool` | pull-request | Get comprehensive PR information | Code review, approval status |
-| `create_pull_request_tool` | pull-request | Create new pull request | Automated PR creation, workflows |
-| `get_pull_request_policies_tool` | pull-request | Get branch policies and compliance | Policy compliance, requirements |
+| `get_pull_requests_tool` | pull-request | Get PRs with status, branch, and reviewer filtering | PR monitoring, review queue |
+| `get_pull_request_details_tool` | pull-request | Get comprehensive PR info with reviewers and linked work items | Code review, approval status |
+| `create_pull_request_tool` | pull-request | Create new PR with title, description, reviewers, and draft option | Automated PR creation, workflows |
+| `get_pull_request_policies_tool` | pull-request | Get branch policies and their evaluation status for compliance | Policy compliance, requirements |
 
 #### Approval Workflow Tools
 
 | Tool Name | Category | Description | Use Cases |
 |-----------|----------|-------------|-----------|
-| `approve_pull_request_tool` | approval | Approve a pull request | Automated approvals, workflows |
-| `reject_pull_request_tool` | approval | Reject a pull request | Quality gates, review process |
-| `request_pull_request_changes_tool` | approval | Request changes on PR | Code review, feedback process |
+| `approve_pull_request_tool` | approval | Approve a PR by casting vote of 10 (Approved) | Automated approvals, workflows |
+| `reject_pull_request_tool` | approval | Reject a PR by casting vote of -10 (Rejected) | Quality gates, review process |
+| `request_pull_request_changes_tool` | approval | Request changes by casting vote of -5 (Waiting for Author) | Code review, feedback process |
 
 ## 📦 Installation
 
@@ -266,21 +291,33 @@ from azuredevops_tools.tools import (
     get_git_commit_details_tool
 )
 
-# Discover all Git repositories in the project
+# Discover all Git repositories in the default project
 repositories = get_git_repositories_tool()
+print(repositories)
+# Output: Repository details with IDs, URLs, default branches, sizes
+
+# Discover repositories in a specific project
+repositories = get_git_repositories_tool(project="MyProject")
 print(repositories)
 
 # Get detailed information about a specific repository
 repo_details = get_git_repository_tool("my-app")
 print(repo_details)
+# Output: Name, ID, default branch, size, URLs, status
 
-# Get recent commits from main branch
+# Get recent commits from main branch (default: 10 commits)
 commits = get_git_commits_tool("my-app", "main", top=10)
+print(commits)
+# Output: Commit IDs, authors, messages, change counts, URLs
+
+# Get commits from specific project and branch
+commits = get_git_commits_tool("my-app", "develop", top=5, project="SpecificProject")
 print(commits)
 
 # Get detailed information about a specific commit
 commit_details = get_git_commit_details_tool("my-app", "abc123def456")
 print(commit_details)
+# Output: Full commit message, author/committer info, file changes, summary
 ```
 
 #### Pull Request Management
@@ -293,32 +330,43 @@ from azuredevops_tools.tools import (
     get_pull_request_policies_tool
 )
 
-# Get active pull requests
+# Get active pull requests (default status='active', top=20)
 active_prs = get_pull_requests_tool("my-app", status="active")
 print(active_prs)
+# Output: PR list with IDs, titles, status, authors, reviewers, branch info
 
 # Get pull requests targeting main branch
 main_prs = get_pull_requests_tool("my-app", target_branch="main")
 print(main_prs)
 
+# Get completed PRs from specific project
+completed_prs = get_pull_requests_tool("my-app", status="completed", 
+                                       top=10, project="MyProject")
+print(completed_prs)
+
 # Get detailed information about a specific PR
 pr_details = get_pull_request_details_tool("my-app", 123)
 print(pr_details)
+# Output: Full description, reviewers with votes, linked work items, merge status
 
-# Create a new pull request
+# Create a new pull request with reviewers
 new_pr = create_pull_request_tool(
     repository_id="my-app",
     title="Fix authentication bug",
-    description="This PR fixes the authentication issue...",
-    source_branch="feature/auth-fix",
+    description="This PR fixes the authentication issue where users with special characters in passwords couldn't log in.",
+    source_branch="feature/auth-fix",  # Without refs/heads/ prefix
     target_branch="main",
-    reviewers=["reviewer1@company.com", "reviewer2@company.com"]
+    reviewers=["reviewer1@company.com", "reviewer2@company.com"],
+    is_draft=False,  # Set to True for draft PR
+    project="MyProject"  # Optional project parameter
 )
 print(new_pr)
+# Output: Created PR details with ID, URL, branch info
 
-# Check branch policies for a PR
+# Check branch policies and compliance for a PR
 policies = get_pull_request_policies_tool("my-app", 123)
 print(policies)
+# Output: Policy names, status, evaluation times
 ```
 
 #### Code Review and Approval Workflows
@@ -330,67 +378,237 @@ from azuredevops_tools.tools import (
     request_pull_request_changes_tool
 )
 
-# Approve a pull request
+# Approve a pull request (vote = 10)
 approval = approve_pull_request_tool("my-app", 123, "reviewer@company.com")
 print(approval)
+# Output: Confirmation with reviewer name, vote description, PR info
 
-# Request changes on a pull request
+# Request changes on a pull request (vote = -5, "Waiting for Author")
 changes = request_pull_request_changes_tool("my-app", 123, "reviewer@company.com")
 print(changes)
+# Output: Change request confirmation with vote details
 
-# Reject a pull request
+# Reject a pull request (vote = -10, "Rejected")
 rejection = reject_pull_request_tool("my-app", 123, "reviewer@company.com")
 print(rejection)
+# Output: Rejection confirmation with reviewer and vote info
+
+# Multi-project approval workflow
+approval_projectA = approve_pull_request_tool("my-app", 123, "reviewer@company.com", 
+                                              project="ProjectA")
+approval_projectB = approve_pull_request_tool("other-app", 456, "reviewer@company.com",
+                                              project="ProjectB")
 ```
 
 #### Complete Workflow Example
 
 ```python
-# 1. Repository Analysis
-repos = get_git_repositories_tool()
-print(f"Found {len(repos)} repositories")
+# Multi-Project DevOps Analysis Workflow
+from azuredevops_tools.tools import *
 
-# 2. Commit History Analysis
-for repo in repos:
-    commits = get_git_commits_tool(repo['name'], top=5)
-    print(f"Recent commits in {repo['name']}: {len(commits)}")
+# 1. Organization-wide Project Discovery
+all_projects = get_projects_tool()
+print(f"Found {len(all_projects)} projects in organization")
 
-# 3. Pull Request Review
-active_prs = get_pull_requests_tool("my-app", "active")
-for pr in active_prs:
-    pr_details = get_pull_request_details_tool("my-app", pr['pullRequestId'])
-    policies = get_pull_request_policies_tool("my-app", pr['pullRequestId'])
+# 2. Cross-Project Repository Analysis
+for project_name in ["ProjectA", "ProjectB", "ProjectC"]:
+    print(f"\n=== Analyzing {project_name} ===")
     
-    print(f"PR #{pr['pullRequestId']}: {pr['title']}")
-    print(f"Reviewers: {len(pr_details['reviewers'])}")
-    print(f"Policies: {len(policies)}")
+    # Get repositories in each project
+    repos = get_git_repositories_tool(project=project_name)
+    print(f"Repositories in {project_name}: {len(repos)}")
+    
+    # Analyze recent commits across repositories
+    for repo_info in repos:
+        repo_name = repo_info['name']
+        commits = get_git_commits_tool(repo_name, top=5, project=project_name)
+        print(f"  {repo_name}: {len(commits)} recent commits")
 
-# 4. Automated Approval (if conditions met)
-if all_conditions_met:
-    approval = approve_pull_request_tool("my-app", pr_id, "auto-reviewer@company.com")
+# 3. Build Health Analysis Across Projects
+def analyze_build_health(project_name, pipeline_id=None):
+    """Analyze build health for a project"""
+    print(f"\n--- Build Health for {project_name} ---")
+    
+    # Get recent builds
+    recent_builds = get_builds_tool(
+        definition_id=pipeline_id, 
+        top=10, 
+        status_filter="completed", 
+        project=project_name
+    )
+    
+    # Analyze failed builds
+    failed_builds = [b for b in recent_builds if 'failed' in b.lower()]
+    if failed_builds:
+        print(f"Found {len(failed_builds)} failed builds")
+        
+        # Get detailed failure info for the most recent failed build
+        # Extract build ID from the failed build info and analyze
+        latest_failed_id = extract_build_id(failed_builds[0])  # Custom helper
+        failed_tasks = get_failed_tasks_with_logs_tool(latest_failed_id, project=project_name)
+        print(f"Failed tasks analysis: {len(failed_tasks)} failed tasks found")
+    
+    return {
+        'total_builds': len(recent_builds),
+        'failed_builds': len(failed_builds),
+        'success_rate': (len(recent_builds) - len(failed_builds)) / len(recent_builds) * 100
+    }
+
+# Analyze builds for multiple projects
+build_health = {}
+for project in ["ProjectA", "ProjectB"]:
+    build_health[project] = analyze_build_health(project)
+
+# 4. Pull Request Management Workflow
+def manage_pull_requests(repo_name, project_name):
+    """Complete PR management workflow"""
+    print(f"\n--- PR Management for {repo_name} in {project_name} ---")
+    
+    # Get active PRs
+    active_prs = get_pull_requests_tool(repo_name, status="active", project=project_name)
+    print(f"Active PRs: {len(active_prs)}")
+    
+    for pr in active_prs:
+        pr_id = pr['pullRequestId']
+        
+        # Get detailed PR information
+        pr_details = get_pull_request_details_tool(repo_name, pr_id, project=project_name)
+        
+        # Check policy compliance
+        policies = get_pull_request_policies_tool(repo_name, pr_id, project=project_name)
+        
+        # Automated approval logic (example)
+        if all_policies_passed(policies) and has_required_approvals(pr_details):
+            approval_result = approve_pull_request_tool(
+                repo_name, pr_id, "automation@company.com", project=project_name
+            )
+            print(f"  Auto-approved PR #{pr_id}: {approval_result}")
+        elif needs_changes(pr_details):
+            change_request = request_pull_request_changes_tool(
+                repo_name, pr_id, "reviewer@company.com", project=project_name
+            )
+            print(f"  Requested changes for PR #{pr_id}: {change_request}")
+
+# Apply PR management to multiple repositories
+for repo in ["web-app", "api-service", "data-processor"]:
+    manage_pull_requests(repo, "ProjectA")
+
+# 5. Changeset Analysis and Code Review
+def analyze_recent_changes(project_name, author_name=None):
+    """Analyze recent changesets for code review"""
+    print(f"\n--- Recent Changes Analysis for {project_name} ---")
+    
+    # Get recent changesets
+    changesets = get_changeset_list_tool(
+        author=author_name, 
+        from_changeset_id=50000,  # Last 1000 changesets
+        to_changeset_id=51000,
+        project=project_name
+    )
+    
+    for changeset_info in changesets:
+        changeset_id = extract_changeset_id(changeset_info)  # Custom helper
+        
+        # Get detailed changes
+        changes = get_changeset_changes_tool(changeset_id, project=project_name)
+        print(f"  Changeset {changeset_id}: {changes}")
+        
+        # Get file diffs for important files
+        important_files = extract_important_files(changes)  # Custom helper
+        for file_path in important_files:
+            diff = get_file_diff_tool(file_path, changeset_id, project=project_name)
+            print(f"    Diff for {file_path}: {len(diff)} characters")
+
+# Analyze changes for specific developers
+analyze_recent_changes("ProjectA", author_name="John Doe")
+analyze_recent_changes("ProjectB", author_name="Jane Smith")
+
+# 6. Cross-Project Comparison Report
+def generate_comparison_report():
+    """Generate a comprehensive cross-project comparison"""
+    report = {
+        'projects': {},
+        'summary': {}
+    }
+    
+    for project in ["ProjectA", "ProjectB", "ProjectC"]:
+        project_data = {
+            'repositories': len(get_git_repositories_tool(project=project)),
+            'pipelines': len(get_build_pipelines_tool(project=project)),
+            'recent_builds': len(get_builds_tool(top=50, project=project)),
+            'active_prs': len(get_pull_requests_tool("main-repo", status="active", project=project))
+        }
+        report['projects'][project] = project_data
+    
+    # Calculate summary statistics
+    report['summary'] = {
+        'total_repositories': sum(p['repositories'] for p in report['projects'].values()),
+        'total_pipelines': sum(p['pipelines'] for p in report['projects'].values()),
+        'total_recent_builds': sum(p['recent_builds'] for p in report['projects'].values()),
+        'average_prs_per_project': sum(p['active_prs'] for p in report['projects'].values()) / len(report['projects'])
+    }
+    
+    return report
+
+final_report = generate_comparison_report()
+print(f"\n=== Final Cross-Project Report ===")
+print(f"Total repositories across all projects: {final_report['summary']['total_repositories']}")
+print(f"Total pipelines: {final_report['summary']['total_pipelines']}")
+print(f"Total recent builds: {final_report['summary']['total_recent_builds']}")
+print(f"Average PRs per project: {final_report['summary']['average_prs_per_project']:.1f}")
 ```
 
 ## 🔍 Tool Categories
 
-### Changeset Tools
-- **Purpose**: Analyze code modifications and version history
-- **Key Features**: File diffs, change summaries, author filtering
-- **Best For**: Code review, change impact analysis, audit trails
+### Changeset Tools (4 tools)
+- **Purpose**: Analyze code modifications and version history in TFVC repositories
+- **Key Features**: File diffs, change summaries, author filtering, ID range filtering
+- **Best For**: Code review, change impact analysis, audit trails, developer activity tracking
+- **Tools**: `get_changeset_tool`, `get_file_diff_tool`, `get_changeset_changes_tool`, `get_changeset_list_tool`
 
-### Build Tools  
-- **Purpose**: Monitor build execution and results
-- **Key Features**: Status tracking, log analysis, timing information
-- **Best For**: CI/CD monitoring, build failure investigation
+### Build Tools (4 tools)  
+- **Purpose**: Monitor build execution, results, and analyze build logs
+- **Key Features**: Status tracking, log analysis with preview/full content, timing information, filtering
+- **Best For**: CI/CD monitoring, build failure investigation, build history analysis
+- **Tools**: `get_build_tool`, `get_builds_tool`, `get_build_logs_tool`, `get_build_log_full_content_tool`
 
-### Pipeline Tools
-- **Purpose**: Manage build definitions and configurations  
-- **Key Features**: Pipeline discovery, metadata retrieval
-- **Best For**: Pipeline administration, configuration management
+### Pipeline Tools (1 tool)
+- **Purpose**: Manage build definitions and pipeline configurations  
+- **Key Features**: Pipeline discovery, metadata retrieval, queue status
+- **Best For**: Pipeline administration, configuration management, pipeline inventory
+- **Tools**: `get_build_pipelines_tool`
 
-### Diagnostic Tools
-- **Purpose**: Troubleshoot build failures and issues
-- **Key Features**: Failed task identification, log extraction
-- **Best For**: Problem diagnosis, failure analysis, debugging
+### Diagnostic Tools (1 tool)
+- **Purpose**: Troubleshoot build failures and identify issues quickly
+- **Key Features**: Failed task identification, log extraction (last 200 lines), markdown formatting
+- **Best For**: Problem diagnosis, failure analysis, debugging, troubleshooting workflows
+- **Tools**: `get_failed_tasks_with_logs_tool`
+
+### Git Repository Tools (4 tools)
+- **Purpose**: Discover and analyze Git repositories, commits, and development activity
+- **Key Features**: Repository metadata, commit history, change statistics, branch analysis
+- **Best For**: Repository management, commit analysis, developer activity tracking, code archaeology
+- **Tools**: `get_git_repositories_tool`, `get_git_repository_tool`, `get_git_commits_tool`, `get_git_commit_details_tool`
+
+### Pull Request Tools (4 tools)
+- **Purpose**: Manage pull requests, code reviews, and collaboration workflows
+- **Key Features**: PR filtering, detailed information, creation workflow, policy compliance
+- **Best For**: Code review management, PR automation, collaboration workflows, policy enforcement
+- **Tools**: `get_pull_requests_tool`, `get_pull_request_details_tool`, `create_pull_request_tool`, `get_pull_request_policies_tool`
+
+### Approval Workflow Tools (3 tools)
+- **Purpose**: Handle code review votes and approval processes
+- **Key Features**: Vote casting (approve/reject/request changes), reviewer management, automated workflows
+- **Best For**: Automated approvals, code review automation, quality gates, review process management
+- **Tools**: `approve_pull_request_tool`, `reject_pull_request_tool`, `request_pull_request_changes_tool`
+
+### Project Management Tools (1 tool)
+- **Purpose**: Discover and manage Azure DevOps projects across the organization
+- **Key Features**: Project metadata, visibility settings, state information
+- **Best For**: Organization management, project discovery, multi-project workflows
+- **Tools**: `get_projects_tool`
+
+**Total: 22 Tools** across 8 categories, all supporting optional project parameter for multi-project scenarios.
 
 ## 🛠️ Development
 
