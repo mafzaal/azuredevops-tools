@@ -19,7 +19,7 @@
             //     "DEVOPS_PAT": "${input:DEVOPS_PAT}"
             // },
             /////////////////////////////////////////////////
-            // Use with uvx --directory
+            // Use with uvx python package
             /////////////////////////////////////////////////
             // "command": "uvx",
             // "args": [
@@ -34,6 +34,22 @@
             /////////////////////////////////////////////////
             // Use with Docker
             /////////////////////////////////////////////////
+            // "command": "docker",
+            // "args": [
+            //     "run",
+            //     "--rm",
+            //     "-i",
+            //     "-e",
+            //     "DEVOPS_ORGANIZATION=${input:DEVOPS_ORGANIZATION}",
+            //     "-e",
+            //     "DEVOPS_PROJECT=${input:DEVOPS_PROJECT}",
+            //     "-e",
+            //     "DEVOPS_PAT=${input:DEVOPS_PAT}",
+            //     "azuredevops-tools:latest"
+            // ]
+             /////////////////////////////////////////////////
+            // Use with Docker image from ghcr.io/mafzaal/azuredevops-tools
+            /////////////////////////////////////////////////
             "command": "docker",
             "args": [
                 "run",
@@ -45,7 +61,7 @@
                 "DEVOPS_PROJECT=${input:DEVOPS_PROJECT}",
                 "-e",
                 "DEVOPS_PAT=${input:DEVOPS_PAT}",
-                "azuredevops-tools:latest"
+                "ghcr.io/mafzaal/azuredevops-tools:latest"
             ]
         }
     },
